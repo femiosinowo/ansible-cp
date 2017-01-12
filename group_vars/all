@@ -1,0 +1,14 @@
+# Fetch/build options. Valid options: nxt, phim
+target_source: "nxt"
+
+fhir_superuser_name: administrator
+fhir_superuser_password: iHN12uxiqfAtMqY8nhTHZBqaikLk+o9lkOuSjZdEtXu1BXodIn5NQO+RGsAwWQu84r/beBA/8LeQlM7oQlYB9Q==
+
+binary_db_user: nxtbinary
+binary_db_password: "{{lookup('password', '/credentials/nxtbinary_db_password length=10 chars=ascii_letters,digits')}}"
+
+audit_db_user: nxtaudit
+audit_db_password: "{{lookup('password', '/credentials/nxtaudit_db_password length=10 chars=ascii_letters,digits')}}"
+
+operations_db_user: nxtoperations
+operations_db_password: "{{lookup('password', '/credentials/nxtoperations_db_password length=10 chars=ascii_letters,digits')}}"

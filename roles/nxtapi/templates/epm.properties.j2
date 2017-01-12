@@ -1,0 +1,22 @@
+﻿# These properties are used to replace Ant-style tokens in the Spring config files at runtime.
+wsdlLocation={{ nxt_api_epm_wsdl }}
+requesterAccountId=NXT-EPM-001
+billingAccountId=NXT-EPM-001
+payloadMetadataProviderId=NXT
+
+wss.userTokenUsername={{ nxt_api_epm_userTokenUsername }}
+wss.userTokenPassword={{ nxt_api_epm_userTokenPassword }}
+
+wss.keyEncryptAlias={{ nxt_api_epm_keyEncryptAlias }}
+
+wss.keySignAlias={{ nxt_api_epm_keySignAlias }}
+wss.keySignPassword={{ nxt_api_epm_keySignPassword }}
+
+wss.keystoreType=jks
+wss.keystorePath=epm.jks
+wss.keystorePassword=password
+
+# Apache CXF: The time in seconds in the future within which
+# the Created time of an incoming Timestamp is valid.
+# The default value is "60".
+wss.futureTimeToLive=120

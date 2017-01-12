@@ -1,0 +1,101 @@
+---
+
+- name: Install PGDG CentOS 6
+  yum: name=http://yum.postgresql.org/9.3/redhat/rhel-6-x86_64/pgdg-centos93-9.3-1.noarch.rpm
+  when: ansible_distribution == "CentOS" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
+  become: true
+
+- name: Install PGDG RedHat 6
+  yum: name=http://yum.postgresql.org/9.3/redhat/rhel-6-x86_64/pgdg-redhat93-9.3-1.noarch.rpm
+  when: ansible_distribution == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
+  become: true
+
+- name: Install PGDG CentOS 7
+  yum: name={{pgdg_install_package_url}}
+  when: ansible_distribution == "CentOS" and {{ ansible_distribution_version | version_compare('7.0', '>=') }}
+  become: true
+
+- name: Install PGDG RedHat 7
+  yum: name={{pgdg_install_package_url}}
+  when: ansible_distribution == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '>=') }}
+  become: true
+
+- name: Install PostgreSQL packages
+  yum: name={{ item }} state=present
+  with_items:
+    - postgresql{{ postgres_version | replace(".", "") }}-server
+    - postgresql{{ postgres_version | replace(".", "") }}-contrib
+    - python-psycopg2
+
+- name: Initialize new PostgreSQL cluster RedHat-CentOS 6
+  command: /etc/init.d/postgresql-{{postgres_version}} initdb
+  args:
+    creates: /var/lib/pgsql/{{postgres_version}}/data/postgresql.conf
+  when: "{{ ansible_distribution_version | version_compare('7.0', '<') }}"
+
+- name: Initialize new PostgreSQL cluster RedHat-CentOS 7
+  command: /usr/pgsql-{{postgres_version}}/bin/postgresql{{ postgres_version | replace(".", "") }}-setup initdb
+  args:
+    creates: "/var/lib/pgsql/{{postgres_version}}/data/postgresql.conf"
+  when: "{{ ansible_distribution_version | version_compare('7.0', '>=') }}"
+
+- name: Setup data directory
+  file: "path={{postgres_data_directory}} state=directory owner={{postgresql_admin_user}}  group={{postgresql_admin_user}}"
+
+
+- name: Move existing data folder with files
+  command: "mv /var/lib/pgsql/{{postgres_version}}/data {{postgres_data_directory}}"
+  become: true
+  args:
+    creates: "{{ postgres_data_directory }}data/postgresql.conf"
+
+- name: Remove the data folder
+  file: path=/var/lib/pgsql/{{postgres_version}}/data state=absent
+
+- name: Setup symlink
+  file: path=/var/lib/pgsql/{{postgres_version}}/data
+        src={{postgres_data_directory}}data
+        state=link
+        force=yes
+
+- name: Check postgresql started and set it to be started at boot
+  service: name=postgresql-{{postgres_version}} state=started enabled=yes
+
+
+- name: Create the replication role
+  postgresql_user: name=replication state=present password={{ postgres_replication_password }} role_attr_flags=NOSUPERUSER,REPLICATION
+  become: true
+  become_user: "{{ postgresql_admin_user }}"
+
+- name: Update pg_hba.conf
+  template:
+    src: pg_hba.conf.j2
+    dest: "/var/lib/pgsql/{{postgres_version}}/data/pg_hba.conf"
+    owner: "{{postgresql_admin_user}}"
+    group: "{{postgresql_admin_user}}"
+    mode: 0640
+
+- name: Enable postgres replication - max number of walsender processes
+  lineinfile: dest=/var/lib/pgsql/{{postgres_version}}/data/postgresql.conf
+    regexp='^#max_wal_senders = 0'
+    line="max_wal_senders = 4"
+    state=present
+
+- name: Enable postgres replication - in logfile segments 16MB each
+  lineinfile: dest=/var/lib/pgsql/{{postgres_version}}/data/postgresql.conf
+    regexp='^#wal_keep_segments = 0'
+    line="wal_keep_segments = 128"
+    state=present
+
+- name: Enable postgres replication - hot_standby
+  lineinfile: dest=/var/lib/pgsql/{{postgres_version}}/data/postgresql.conf
+    regexp='^#wal_level = minimal'
+    line="wal_level = hot_standby"
+    state=present
+
+- name: Ensure PostgreSQL is listening on all addresses
+  lineinfile: dest=/var/lib/pgsql/{{postgres_version}}/data/postgresql.conf
+    regexp='^#?listen_addresses\s*='
+    line="listen_addresses = '*'"
+    state=present
+  notify: restart postgresql

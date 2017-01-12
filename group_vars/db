@@ -1,0 +1,99 @@
+---
+# File: group_vars/dbservers - Database servers variables
+
+#############################################################################
+# Available Couchbase Server default variables
+#
+# couchbase_server_ram: The per server RAM quota specified in megabytes
+# couchbase_server_admin_port: Administration and web console port
+# couchbase_server_api_port: Couchbase Server API port
+# couchbase_server_internal_ports: Memcached and client ports
+# couchbase_server_node_data_ports: Distributed Erlang communication ports
+# couchbase_server_config_file: Full path to the config.dat file
+# couchbase_server_data_path: Path to data files
+# couchbase_server_home_path: Base path to Couchbase Server installation
+# couchbase_server_index_path: Path to index files
+# couchbase_server_log_path: Path to log files
+# couchbase_server_rhel_pkg_version: Default RHEL package version
+# couchbase_server_rhel_pkg_file: Default RHEL package filename
+# couchbase_server_rhel_pkg_url: Default RHEL package URL
+# couchbase_server_rhel_pkg_sha256: Default RHEL package SHA256 checksum
+# couchbase_server_ubuntu_pkg_version: Default Ubuntu package version
+# couchbase_server_ubuntu_pkg_file: Default Ubuntu package filename
+# couchbase_server_ubuntu_pkg_url: Default Ubuntu package URL
+# couchbase_server_ubuntu_pkg_sha256: Default Ubuntu package SHA256 checksum
+# couchbase_server_tune_disks: Whether to mount disks with optimized settings
+#
+#############################################################################
+
+couchbase_server_admin: Administrator
+couchbase_server_password: "{{lookup('password', '/credentials/couchbase length=10 chars=ascii_letters,digits')}}"
+couchbase_server_ram: 2000
+couchbase_server_admin_port: 8091
+couchbase_server_api_port: 8092
+couchbase_server_internal_ports: 11209:11211
+couchbase_server_node_data_ports: 21100:21299
+couchbase_server_config_file: /opt/couchbase/var/lib/couchbase/config/config.dat
+couchbase_server_filesystem: ext4
+couchbase_server_mountpoint: /
+couchbase_server_partition: /dev/mapper/VolGroup-lv_root
+couchbase_server_mount_options: noatime,barrier=0,errors=remount-ro
+couchbase_server_data_path: /data/couchbase/data
+couchbase_server_home_path: /opt/couchbase
+couchbase_server_index_path: /data/couchbase/index
+couchbase_server_log_path: /data/couchbase/logs
+couchbase_server_rhel_pkg_version: 4.5.0
+couchbase_server_rhel_pkg_file: couchbase-server-enterprise-4.5.0-centos7.x86_64.rpm
+couchbase_server_rhel_pkg_url: http://packages.couchbase.com/releases/4.5.0/couchbase-server-enterprise-4.5.0-centos7.x86_64.rpm
+couchbase_server_rhel_pkg_sha256: 592af5e36fd939214e154228af428ed014c9865fc16eb6c8a0c93d3f33a733ac
+couchbase_server_ubuntu_pkg_version: 2.5.1
+couchbase_server_ubuntu_pkg_file: couchbase-server-enterprise_4.5.0-ubuntu14.04_amd64.deb
+couchbase_server_ubuntu_pkg_url: http://packages.couchbase.com/releases/4.5.0/couchbase-server-enterprise_4.5.0-ubuntu14.04_amd64.deb
+couchbase_server_ubuntu_pkg_sha256: 441398302210c0d73f27bdab741b471fc9da116bf45f521b314345f04560716e
+couchbase_server_tune_disks: false
+
+# Elasticsearch variables
+elasticsearch_cluster_name: phr_demo
+elasticsearch_group: elasticsearch
+elasticsearch_user: elasticsearch
+elasticsearch_couchbase_username: escb
+elasticsearch_couchbase_password: "{{lookup('password', '/credentials/elasticsearch_couchbase length=10 chars=ascii_letters,digits')}}"
+elasticsearch_heap_size: 2
+elasticsearch_couchbase_transport_port: 9091
+elasticsearch_home_dir: /usr/share/elasticsearch
+elasticsearch_plugin_dir: /usr/share/elasticsearch/plugins
+elasticsearch_data_dir: /data/elasticsearch/data
+elasticsearch_work_dir: /data/elasticsearch/work
+elasticsearch_log_dir: /data/elasticsearch/log
+elasticsearch_conf_dir: /etc/elasticsearch
+elasticsearch_max_open_files: 65535
+elasticsearch_discovery_zen_ping_multicast_enabled: false
+elasticsearch_download_url: https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-1.7.5.noarch.rpm
+elasticsearch_transport_couchbase_download_url: https://github.com/couchbaselabs/elasticsearch-transport-couchbase/releases/download/2.1.2-GA/elasticsearch-transport-couchbase-2.1.2.zip
+elasticsearch_mvel_plugin_package: elasticsearch/elasticsearch-lang-mvel/1.7.0
+elasticsearch_mvel_plugin_download_url: http://download.elasticsearch.org/elasticsearch/elasticsearch-lang-mvel/elasticsearch-lang-mvel-1.7.0.zip
+
+fhir_index_number_of_replicas: 0
+fhir_index_number_of_shards: 2
+audit_index_number_of_replicas: 0
+audit_index_number_of_shards: 2
+voc_index_number_of_replicas: 1
+voc_index_number_of_shards: 2
+
+# PostgreSQL variables
+pgdg_install_package_url: http://yum.postgresql.org/9.5/redhat/rhel-7-x86_64/pgdg-centos95-9.5-2.noarch.rpm
+postgres_version: 9.5
+postgres_data_directory: /data/postgresql/pgsql/
+postgresql_admin_user: postgres
+postgres_replication_password: "{{lookup('password', '/credentials/postgres_replication_password length=10 chars=ascii_letters,digits')}}"
+postgresql_default_auth_method: "trust"
+postgresql_pg_hba_default:
+  - { type: local, database: all, user: '{{ postgresql_admin_user }}', address: '', method: '{{ postgresql_default_auth_method }}', comment: '' }
+  - { type: local, database: 'NXT_BINARY', user: '{{ binary_db_user }}', address: '', method: 'md5', comment: '' }
+  - { type: local, database: 'NXT_AUDIT', user: '{{ audit_db_user }}', address: '', method: 'md5', comment: '' }
+  - { type: local, database: all, user: all, address: '',             method: '{{ postgresql_default_auth_method }}', comment: '"local" is for Unix domain socket connections only' }
+  - { type: host,  database: all, user: all, address: '127.0.0.1/32', method: '{{ postgresql_default_auth_method }}', comment: 'IPv4 local connections:' }
+  - { type: host,  database: all, user: all, address: '::1/128',      method: '{{ postgresql_default_auth_method }}', comment: 'IPv6 local connections:' }
+postgresql_pg_hba_passwd_hosts: []
+postgresql_pg_hba_trust_hosts: []
+postgresql_pg_hba_custom: []

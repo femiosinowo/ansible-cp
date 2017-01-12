@@ -1,0 +1,6 @@
+---
+
+- include: package.yml
+  when: nginx_install_method == "package"
+- include: source.yml
+  when: nginx_install_method == "source"

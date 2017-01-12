@@ -1,0 +1,21 @@
+{
+  "timestamp": 0,
+  "type": "user",
+  "version": 0,
+  "tags": null,
+  "user": {
+    "resourceType": "User",
+    "username": "{{fhir_superuser_name}}",
+    "accountType": "administrator",
+    "family": "Admin",
+    "given": "Admin",
+    "status": "active",
+    "roles": [
+      {
+        "reference": "Role/administrator",
+        "display": "Administrator"
+      }
+    ],
+    "password": "{{fhir_superuser_password}}"
+  }
+}

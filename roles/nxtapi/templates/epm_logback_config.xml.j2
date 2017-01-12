@@ -1,0 +1,41 @@
+﻿<!--
+    Logger configuration file for the Logback logging system.
+    Documentation for how to work with this file can be found here: http://logback.qos.ch/manual/configuration.html.
+    Documentation on layout patterns is here: http://logback.qos.ch/manual/layouts.html.
+-->
+<included>
+
+    <!-- <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date %level [%thread] %logger - %msg%n</pattern>
+        </encoder>
+    </appender>-->
+
+    <!--
+        Uncomment the ROLLING_FILE appender below to enable the rolling log file.
+        It is setup to rollover daily, and any files older than 365 days will be auto-deleted when rollover happens.
+        You can delete the maxHistory element to keep all file history forever (no auto-deletions).
+
+        NOTE: This could be externalized into a separate XML file and imported with an <include> element. That
+        separate XML file could be customized based on build.properties parameters during the build process to
+        allow sysadmins to specify exact file location, filename, etc.
+        See http://logback.qos.ch/manual/configuration.html#fileInclusion for more information.
+    -->
+
+    <appender name="myAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>{{ nxt_api_log_path }}/epmWrapperService.log</file>
+        <append>true</append>
+        <prudent>false</prudent>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>{{ nxt_api_log_path }}/epmWrapperService.%d{yyyy-MM-dd}.log</fileNamePattern>
+
+            <maxHistory>365</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%date %level [%thread] %logger - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+</included>

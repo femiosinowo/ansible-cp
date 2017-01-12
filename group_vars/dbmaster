@@ -1,0 +1,16 @@
+---
+# File: group_vars/primary - Database definitions
+
+buckets:
+  fhir:
+    type: couchbase
+    ramsize: 512
+    replica: 1
+  audit:
+    type: couchbase
+    ramsize: 1024
+    replica: 1
+  sessions:
+    type: couchbase
+    ramsize: 128
+    replica: 0

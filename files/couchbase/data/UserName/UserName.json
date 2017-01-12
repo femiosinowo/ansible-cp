@@ -1,0 +1,15 @@
+{
+    "documents": [
+        {
+            "id": "UserName/administrator",
+            "content": {
+                "resourceType": "UserName",
+                "username": "administrator",
+                "user": {
+                    "reference": "User/54321",
+                    "display": "Administrator"
+                }
+            }
+        }
+    ]
+}

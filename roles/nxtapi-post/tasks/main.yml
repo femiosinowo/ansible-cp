@@ -1,0 +1,22 @@
+---
+
+- name: Enable checkAuthorization
+  become: true
+  lineinfile: dest={{ nxt_api_home_path }}/config.js
+    regexp='^config.checkAuthorization = false;'
+    line="config.checkAuthorization = true;"
+    state=present
+
+- name: Enable xsrf
+  become: true
+  lineinfile: dest={{ nxt_api_home_path }}/config.js
+    regexp='^config.auth.xsrfEnabled = false;'
+    line="config.auth.xsrfEnabled = true;"
+    state=present
+
+- name: Enable secure cookies
+  become: true
+  lineinfile: dest={{ nxt_api_home_path }}/config.js
+    regexp='^config.auth.secureCookies = false;'
+    line="config.auth.secureCookies = true;"
+    state=present

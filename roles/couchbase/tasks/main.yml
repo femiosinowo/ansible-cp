@@ -1,0 +1,66 @@
+---
+
+#- name: Variables
+#  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Install Couchbase
+  yum: name={{ couchbase_server_rhel_pkg_url }} state=present
+
+- name: Update user limits
+  copy: src=etc_security_limits.d_couchbase-server.conf dest=/etc/security/limits.d/couchbase-server.conf owner=root group=root mode=0644
+
+#- name: Optimized settings for Couchbase Server data and index volumes
+#  mount: "name={{ couchbase_server_mountpoint }} src={{ couchbase_server_partition }} opts={{ couchbase_server_mount_options }} fstype={{ couchbase_server_filesystem }} state=mounted"
+#  when: couchbase_server_tune_disks
+
+#- name: Additional OS config
+#  template: src=etc_rc.local.j2 dest=/etc/rc.local owner=root group=root mode=0755
+#  notify: Source local settings
+#  when: couchbase_server_tune_disks
+
+- name: Kernel settings dir
+  file: dest=/etc/sysctl.d state=directory
+
+- name: Kernel settings config
+  template: src=etc_sysctl.d_couchbase-server.conf.j2 dest=/etc/sysctl.d/couchbase-server.conf owner=root group=root mode=0644
+  notify: Update kernel settings
+
+- name: Disable THP
+  shell: echo 'for i in /sys/kernel/mm/*transparent_hugepage/enabled; do echo never > $i; done' >> /etc/rc.local
+- shell: echo 'for i in /sys/kernel/mm/*transparent_hugepage/defrag; do echo never > $i; done' >> /etc/rc.local
+- shell: for i in /sys/kernel/mm/*transparent_hugepage/enabled; do echo never > $i; done
+
+- name: Create data directories
+  file: dest={{ item }} state=directory owner=couchbase group=couchbase
+  with_items:
+    - "{{ couchbase_server_data_path }}"
+    - "{{ couchbase_server_index_path }}"
+    - "{{ couchbase_server_log_path }}"
+
+- name: Configure logs folder
+  lineinfile: regexp=".*couchbase/logs" line="{error_logger_mf_dir, \"{{ couchbase_server_log_path }}\"}." dest=/opt/couchbase/etc/couchbase/static_config state=present
+
+- name: Remove initd script
+  file: path="/etc/init.d/couchbase-server" state=absent
+  become: true
+
+
+- name: Install service files
+  copy:
+    src: ../files/couchbase-server.service
+    dest: /etc/systemd/system/couchbase-server.service
+    owner: root
+    group: root
+    mode: 0755
+  become: true
+
+- name: Start Couchbase server service
+  service: name=couchbase-server state=started
+
+- name: Wait for nodes
+  wait_for: port={{ couchbase_server_admin_port }} delay=7
+
+- name: Set data path
+  shell: "{{ couchbase_server_home_path }}/bin/couchbase-cli node-init -c 127.0.0.1:{{ couchbase_server_admin_port }} --node-init-data-path={{ couchbase_server_data_path }} --node-init-index-path={{ couchbase_server_index_path }} --user={{ couchbase_server_admin }} --password={{ couchbase_server_password }}"
+  args:
+    creates: "{{ couchbase_server_data_path }}/_users.couch.1"

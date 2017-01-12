@@ -1,0 +1,35 @@
+---
+
+- name: Create UI directory
+  file: path=/usr/local/www/nxt state=directory
+
+- name: Deploy UI files
+  # copy: src=../../../../{{ target_source }}-dist-ui/ dest=/usr/local/www/nxt
+  synchronize: src=../../../../{{ target_source }}-dist-ui/ dest=/usr/local/www/nxt
+
+- name: Set UI BaseURL
+  replace: dest=/usr/local/www/nxt/config.js regexp='^(\\s*\t*BaseURL.*\').*(\',\\s*)' replace='\1{{ nxt_api_base_url }}/api/\2'
+
+- name: Copy Nginx UI configs
+  template: src=nginx.conf.j2 dest=/etc/nginx/nginx.conf
+- template: src=nxt.conf.j2 dest=/etc/nginx/conf.d/nxt.conf
+
+- name: Copy Naxsi core rules
+  command: cp /tmp/naxsi-{{nginx_naxsi_version}}/naxsi_config/naxsi_core.rules {{nginx_dir}}/naxsi_core.rules
+  become: true
+  when: nginx_install_method == "source"
+
+- name: Copy Naxsi rules | Make sure the naxsi_module configuration is up to date
+  copy:
+    src: ../files/naxsi.rules
+    dest: "{{nginx_dir}}/naxsi.rules"
+    owner: root
+    group: root
+    mode: 0644
+  when: nginx_install_method == "source"
+
+- name: Enable nginx service
+  service: name=nginx enabled=yes
+
+- name: Start nginx service
+  service: name=nginx state=restarted

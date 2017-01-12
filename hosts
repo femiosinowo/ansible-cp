@@ -1,0 +1,20 @@
+[localhost]
+127.0.0.1
+
+[dbmaster]
+10.1.2.233
+
+[dbslave]
+
+[db:children]
+dbmaster
+dbslave
+
+[appapi]
+10.1.2.236
+
+[app:children]
+appapi
+
+[web]
+10.1.2.236 app_server=10.1.2.236

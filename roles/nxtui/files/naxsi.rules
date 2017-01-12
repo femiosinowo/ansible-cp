@@ -1,0 +1,289 @@
+#LearningMode; #Enables learning mode
+SecRulesEnabled;
+#SecRulesDisabled;
+DeniedUrl "/RequestDenied";
+## check rules
+CheckRule "$SQL >= 8" BLOCK;
+CheckRule "$RFI >= 8" BLOCK;
+CheckRule "$TRAVERSAL >= 4" BLOCK;
+CheckRule "$EVADE >= 4" BLOCK;
+CheckRule "$XSS >= 8" BLOCK;
+
+#request too big, stored on disk and not parsed
+#BasicRule  wl:2 "mz:BODY";
+BasicRule  wl:2 "mz:$URL:/api/fhir/Binary|BODY";
+BasicRule  wl:2 "mz:$URL:/api/fhir/Binary|BODY";
+BasicRule  wl:2 "mz:$URL:/api/api/importHealthapp|BODY";
+BasicRule  wl:2 "mz:BODY";
+BasicRule  wl:2 "mz:$URL:/api/api/importHealthapp|BODY";
+
+#unknown content-type
+BasicRule  wl:11 "mz:$URL:/api/fhir/Binary|BODY";
+#BasicRule  wl:11 "mz:$URL_X:/api/fhir/Binary/{[A-Z0-9]{8}-([A-Z0-9]{4}-){3}[A-Z0-9]{12}}/download|BODY";
+
+#invalid JSON
+BasicRule  wl:15 "mz:$URL:/api/api/fitbitNotification|BODY";
+BasicRule  wl:15 "mz:$URL:/api/api/fitbitNotification|BODY";
+BasicRule  wl:15 "mz:$URL:/api/api/contextHealthapp|BODY";
+BasicRule  wl:15 "mz:$URL:/api/api/contextSHealth|BODY";
+
+#empty POST
+BasicRule  wl:16 "mz:$URL:/api/security/logout|BODY";
+BasicRule  wl:16 "mz:$URL:/api/api/Message/validateEpm|BODY";
+BasicRule  wl:16 "mz:$URL_X:/api/api/Message/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}/\$archive|BODY";
+BasicRule  wl:16 "mz:$URL_X:/api/api/Message/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}/\$mark-as-read|BODY";
+BasicRule  wl:16 "mz:$URL:/api/api/unsubscribeFitbit|BODY";
+
+#sql keywords
+#BasicRule  wl:1000 "mz:ARGS";
+#BasicRule  wl:1000 "mz:BODY";
+#BasicRule  wl:1000 "mz:URL";
+BasicRule  wl:1000 "mz:$URL:/api/fhir/Message|BODY|NAME";
+BasicRule  wl:1000 "mz:$URL:/api/fhir/Message|$BODY_VAR:subject";
+BasicRule  wl:1000 "mz:$URL_X:/api/fhir/Message/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:subject";
+BasicRule  wl:1000 "mz:$URL:/api/fhir/Document|BODY|NAME";
+BasicRule  wl:1000 "mz:$URL:/api/fhir/SecurityEvent|$ARGS_VAR:subtype";
+BasicRule  wl:1000 "mz:$BODY_VAR:div";
+BasicRule  wl:1000 "mz:$BODY_VAR:display";
+BasicRule  wl:1000 "mz:$URL:/scripts/ng-table/filters/select.html|URL";
+BasicRule  wl:1000 "mz:$URL:/scripts/ng-table/filters/select-multiple.html|URL";
+BasicRule  wl:1000 "mz:$URL:/api/fhir/Document|BODY";
+BasicRule  wl:1000 "mz:$URL:/api/fhir/MedicationPrescription|BODY";
+BasicRule  wl:1000 "mz:$URL:/api/fhir/SecurityEvent|ARGS";
+BasicRule  wl:1000 "mz:$URL:/api/fhir/Document|$BODY_VAR:div";
+BasicRule  wl:1000 "mz:$URL:/api/fhir/Document|$BODY_VAR:display";
+BasicRule  wl:1000 "mz:$URL:/api/fhir/MedicationPrescription|$BODY_VAR:display";
+BasicRule  wl:1000 "mz:$HEADERS_VAR:cookie";
+
+#double quote
+BasicRule  wl:1001 "mz:$HEADERS_VAR:cookie";
+BasicRule  wl:1001 "mz:$BODY_VAR:div";
+BasicRule  wl:1001 "mz:$URL:/api/fhir/Task|$ARGS_VAR:status";
+BasicRule  wl:1001 "mz:$URL:/api/voc/Concept|$ARGS_VAR:valuesetname:exact";
+BasicRule  wl:1001 "mz:$URL:/api/voc/Concept|$ARGS_VAR:display";
+BasicRule  wl:1001 "mz:$URL:/api/voc/Concept|$ARGS_VAR:rel_is-a";
+BasicRule  wl:1001 "mz:$URL:/api/voc/Concept|$ARGS_VAR:code";
+BasicRule  wl:1001 "mz:$URL:/api/fhir/Medication|$ARGS_VAR:code:text";
+BasicRule  wl:1001 "mz:$URL:/api/fhir/Substance|$ARGS_VAR:type:text";
+BasicRule  wl:1001 "mz:$URL:/api/fhir/Document|$BODY_VAR:div";
+
+#0x, possible hex encoding
+BasicRule  wl:1002 "mz:$HEADERS_VAR:cookie";
+BasicRule  wl:1002 "mz:$URL:/api/fhir/Patient|$BODY_VAR:data";
+BasicRule  wl:1002 "mz:$URL_X:/api/fhir/Patient/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:data";
+
+#mysql comment (--)
+BasicRule  wl:1007 "mz:$HEADERS_VAR:cookie";
+
+#; in stuff
+BasicRule  wl:1008 "mz:URL";
+BasicRule  wl:1008 "mz:$URL:/api/fhir/Patient|$BODY_VAR:data";
+BasicRule  wl:1008 "mz:$URL_X:/api/fhir/Patient/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:data";
+
+#equal in var, probable sql/xss
+BasicRule  wl:1009 "mz:ARGS";
+BasicRule  wl:1009 "mz:BODY";
+BasicRule  wl:1009 "mz:$BODY_VAR:div";
+BasicRule  wl:1009 "mz:$URL:/api/fhir/Task|$ARGS_VAR:due_date";
+BasicRule  wl:1009 "mz:$URL:/api/fhir/Appointment|$ARGS_VAR:date";
+BasicRule  wl:1009 "mz:$URL:/feed/load|$ARGS_VAR:q";
+BasicRule  wl:1009 "mz:$URL:/api/fhir/Observation|$ARGS_VAR:issued";
+BasicRule  wl:1009 "mz:$URL:/api/fhir/DocumentReference|$ARGS_VAR:created";
+BasicRule  wl:1009 "mz:$URL:/api/fhir/Exercise|$ARGS_VAR:date";
+BasicRule  wl:1009 "mz:$URL:/api/fhir/User|$ARGS_VAR:username";
+BasicRule  wl:1009 "mz:$URL:/api/fhir/Task|ARGS";
+BasicRule  wl:1009 "mz:$URL:/api/fhir/Appointment|ARGS";
+BasicRule  wl:1009 "mz:$URL:/feed/load|ARGS";
+BasicRule  wl:1009 "mz:$URL:/api/fhir/Observation|ARGS";
+BasicRule  wl:1009 "mz:$URL:/api/fhir/DocumentReference|ARGS";
+BasicRule  wl:1009 "mz:$URL:/api/fhir/Exercise|ARGS";
+BasicRule  wl:1009 "mz:$URL:/api/fhir/User|ARGS";
+BasicRule  wl:1009 "mz:$URL:/api/fhir/Document|$BODY_VAR:div";
+BasicRule  wl:1009 "mz:$URL:/api/security/login|$BODY_VAR:password";
+BasicRule  wl:1009 "mz:$URL:/api/security/login|BODY";
+BasicRule  wl:1009 "mz:$URL:/api/fhir/Document|BODY";
+
+#parenthesis, probable sql/xss - (
+#BasicRule  wl:1010 "mz:BODY";
+#BasicRule  wl:1010 "mz:URL";
+BasicRule  wl:1010 "mz:$HEADERS_VAR:cookie";
+BasicRule  wl:1010 "mz:$BODY_VAR:div";
+BasicRule  wl:1010 "mz:$BODY_VAR:display";
+BasicRule  wl:1010 "mz:$URL:/api/fhir/Observation|$BODY_VAR:text";
+BasicRule  wl:1010 "mz:$URL_X:/api/fhir/Observation/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:text";
+BasicRule  wl:1010 "mz:$URL:/api/fhir/Observation|$BODY_VAR:display";
+BasicRule  wl:1010 "mz:$URL_X:/api/fhir/Observation/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:display";
+BasicRule  wl:1010 "mz:$URL:/api/fhir/Document|$BODY_VAR:div";
+BasicRule  wl:1010 "mz:$URL:/api/fhir/Document|$BODY_VAR:display";
+BasicRule  wl:1010 "mz:$URL:/api/fhir/Message|$BODY_VAR:display";
+BasicRule  wl:1010 "mz:$URL:/api/fhir/DocumentReference|$BODY_VAR:description";
+BasicRule  wl:1010 "mz:$URL:/api/fhir/AllergyIntolerance|$BODY_VAR:display";
+BasicRule  wl:1010 "mz:$URL:/api/fhir/Message|BODY";
+BasicRule  wl:1010 "mz:$URL:/api/fhir/Document|BODY";
+BasicRule  wl:1010 "mz:$URL:/api/fhir/Observation|BODY";
+BasicRule  wl:1010 "mz:$URL:/api/fhir/DocumentReference|BODY";
+BasicRule  wl:1010 "mz:$URL:/api/fhir/AllergyIntolerance|BODY";
+
+#parenthesis, probable sql/xss - )
+#BasicRule  wl:1011 "mz:BODY";
+BasicRule  wl:1011 "mz:$HEADERS_VAR:cookie";
+BasicRule  wl:1011 "mz:$BODY_VAR:display";
+BasicRule  wl:1011 "mz:$BODY_VAR:div";
+BasicRule  wl:1011 "mz:$URL:/api/fhir/Document|$BODY_VAR:div";
+BasicRule  wl:1011 "mz:$URL:/api/fhir/Document|$BODY_VAR:display";
+BasicRule  wl:1011 "mz:$URL:/api/fhir/Observation|$BODY_VAR:text";
+BasicRule  wl:1011 "mz:$URL_X:/api/fhir/Observation/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:text";
+BasicRule  wl:1011 "mz:$URL:/api/fhir/Observation|$BODY_VAR:display";
+BasicRule  wl:1011 "mz:$URL_X:/api/fhir/Observation/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:display";
+BasicRule  wl:1011 "mz:$URL:/api/fhir/DocumentReference|$BODY_VAR:description";
+BasicRule  wl:1011 "mz:$URL:/api/fhir/Message|$BODY_VAR:display";
+BasicRule  wl:1011 "mz:$URL:/api/fhir/AllergyIntolerance|$BODY_VAR:display";
+BasicRule  wl:1011 "mz:$URL:/api/fhir/Message|BODY";
+BasicRule  wl:1011 "mz:$URL:/api/fhir/Document|BODY";
+BasicRule  wl:1011 "mz:$URL:/api/fhir/Observation|BODY";
+BasicRule  wl:1011 "mz:$URL:/api/fhir/DocumentReference|BODY";
+BasicRule  wl:1011 "mz:$URL:/api/fhir/AllergyIntolerance|BODY";
+
+#single quote
+BasicRule  wl:1013 "mz:$HEADERS_VAR:cookie";
+
+#, in stuff
+#BasicRule  wl:1015 "mz:BODY";
+#BasicRule  wl:1015 "mz:ARGS";
+#BasicRule  wl:1015 "mz:URL";
+BasicRule  wl:1015 "mz:$BODY_VAR:display";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/SecurityEvent|$ARGS_VAR:fhir_type";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/SecurityEvent|$ARGS_VAR:subtype";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/Observation|$ARGS_VAR:status";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/Observation|$ARGS_VAR:name";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/AllergyIntolerance|$ARGS_VAR:status";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/Message|$ARGS_VAR:status";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/EmailAccount|$ARGS_VAR:owner";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/Condition|$BODY_VAR:text";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/Condition|$BODY_VAR:display";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/SecurityEvent|ARGS";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/Observation|ARGS";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/AllergyIntolerance|ARGS";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/Message|ARGS";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/EmailAccount|ARGS";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/Document|$BODY_VAR:text";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/Document|$BODY_VAR:display";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/Document|BODY";
+BasicRule  wl:1015 "mz:$URL:/api/fhir/Condition|BODY";
+
+#mysql comment (#)
+#BasicRule  wl:1016 "mz:BODY";
+BasicRule  wl:1016 "mz:$BODY_VAR:url";
+BasicRule  wl:1016 "mz:$BODY_VAR:reference";
+BasicRule  wl:1016 "mz:$URL:/api/fhir/Observation|$BODY_VAR:url";
+BasicRule  wl:1016 "mz:$URL:/api/fhir/Document|$BODY_VAR:url";
+BasicRule  wl:1016 "mz:$URL:/api/fhir/Document|$BODY_VAR:reference";
+BasicRule  wl:1016 "mz:$URL:/api/fhir/Observation|BODY";
+BasicRule  wl:1016 "mz:$URL:/api/fhir/Document|BODY";
+
+#http://
+BasicRule  wl:1100 "mz:$BODY_VAR:system";
+BasicRule  wl:1100 "mz:$BODY_VAR:url";
+BasicRule  wl:1100 "mz:$BODY_VAR:reference";
+BasicRule  wl:1100 "mz:$URL:/feed/load|$ARGS_VAR:q";
+BasicRule  wl:1100 "mz:$URL:/feed/load|ARGS";
+BasicRule  wl:1100 "mz:$URL:/api/fhir/Observation|$BODY_VAR:system";
+BasicRule  wl:1100 "mz:$URL:/api/fhir/Observation|$BODY_VAR:url";
+BasicRule  wl:1100 "mz:$URL:/api/fhir/Document|$BODY_VAR:system";
+BasicRule  wl:1100 "mz:$URL:/api/fhir/Document|$BODY_VAR:text";
+BasicRule  wl:1100 "mz:$URL:/api/fhir/Document|$BODY_VAR:url";
+BasicRule  wl:1100 "mz:$URL:/api/fhir/DocumentReference|$BODY_VAR:system";
+BasicRule  wl:1100 "mz:$URL_X:/api/fhir/DocumentReference/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:location";
+BasicRule  wl:1100 "mz:$URL:/api/fhir/Appointment|$BODY_VAR:system";
+BasicRule  wl:1100 "mz:$URL:/api/fhir/MedicationPrescription|$BODY_VAR:system";
+BasicRule  wl:1100 "mz:$URL:/api/fhir/Condition|$BODY_VAR:system";
+BasicRule  wl:1100 "mz:$URL:/api/fhir/Exercise|$BODY_VAR:system";
+BasicRule  wl:1100 "mz:$URL:/api/fhir/Task|$BODY_VAR:system";
+
+#https://
+BasicRule  wl:1101 "mz:$URL:/api/fhir/Document|$BODY_VAR:id";
+BasicRule  wl:1101 "mz:$URL:/api/fhir/Document|$BODY_VAR:div";
+BasicRule  wl:1101 "mz:$URL:/api/fhir/Document|$BODY_VAR:system";
+BasicRule  wl:1101 "mz:$URL:/api/fhir/Message|$BODY_VAR:attachments";
+BasicRule  wl:1101 "mz:$URL_X:/api/fhir/Message/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:reference";
+BasicRule  wl:1101 "mz:$URL:/api/fhir/Message|BODY";
+BasicRule  wl:1101 "mz:$URL:/api/fhir/DocumentReference|$BODY_VAR:location";
+BasicRule  wl:1101 "mz:$URL_X:/api/fhir/DocumentReference/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:location";
+
+#directory traversal: double dot ".."
+BasicRule wl:1200 "mz:$URL:/login|$ARGS_VAR:session_state";
+BasicRule wl:1200 "mz:$URL:/api/security/openIdConnectCallback|$ARGS_VAR:session_state";
+
+#backslash
+BasicRule  wl:1205 "mz:$BODY_VAR:div";
+
+#html open tag - <
+BasicRule  wl:1302 "mz:$BODY_VAR:reference";
+BasicRule  wl:1302 "mz:$BODY_VAR:div";
+BasicRule  wl:1302 "mz:$HEADERS_VAR:cookie";
+BasicRule  wl:1302 "mz:$URL:/api/fhir/Task|$ARGS_VAR:due_date";
+BasicRule  wl:1302 "mz:$URL:/api/fhir/Appointment|$ARGS_VAR:end_date";
+BasicRule  wl:1302 "mz:$URL:/api/fhir/Appointment|$ARGS_VAR:date";
+BasicRule  wl:1302 "mz:$URL:/api/fhir/SecurityEvent|$ARGS_VAR:date";
+BasicRule  wl:1302 "mz:$URL:/api/fhir/Observation|$ARGS_VAR:issued";
+BasicRule  wl:1302 "mz:$URL:/api/fhir/DocumentReference|$ARGS_VAR:created";
+BasicRule  wl:1302 "mz:$URL:/api/fhir/Exercise|$ARGS_VAR:date";
+BasicRule  wl:1302 "mz:$URL:/api/fhir/Observation|$BODY_VAR:reference";
+BasicRule  wl:1302 "mz:$URL:/api/fhir/Document|$BODY_VAR:div";
+BasicRule  wl:1302 "mz:$URL:/api/fhir/AllergyIntolerance|$ARGS_VAR:date";
+BasicRule  wl:1302 "mz:$URL:/api/fhir/Condition|$ARGS_VAR:date_asserted";
+BasicRule  wl:1302 "mz:$URL:/api/fhir/MedicationPrescription|$ARGS_VAR:datestart";
+BasicRule  wl:1302 "mz:$URL:/api/fhir/Sleep|$ARGS_VAR:start_date";
+
+#html close tag - >
+BasicRule  wl:1303 "mz:$HEADERS_VAR:cookie";
+BasicRule  wl:1303 "mz:$BODY_VAR:div";
+BasicRule  wl:1303 "mz:$URL:/api/fhir/Task|$ARGS_VAR:due_date";
+BasicRule  wl:1303 "mz:$URL:/api/fhir/Appointment|$ARGS_VAR:date";
+BasicRule  wl:1303 "mz:$URL:/api/fhir/SecurityEvent|$ARGS_VAR:date";
+BasicRule  wl:1303 "mz:$URL:/api/fhir/Observation|$ARGS_VAR:issued";
+BasicRule  wl:1303 "mz:$URL:/api/fhir/DocumentReference|$ARGS_VAR:created";
+BasicRule  wl:1303 "mz:$URL:/api/fhir/Exercise|$ARGS_VAR:date";
+BasicRule  wl:1303 "mz:$URL:/api/fhir/Observation|$BODY_VAR:reference";
+BasicRule  wl:1303 "mz:$URL:/api/fhir/AllergyIntolerance|$ARGS_VAR:date";
+BasicRule  wl:1303 "mz:$URL:/api/fhir/Condition|$ARGS_VAR:date_asserted";
+BasicRule  wl:1303 "mz:$URL:/api/fhir/MedicationPrescription|$ARGS_VAR:datestart";
+BasicRule  wl:1303 "mz:$URL:/api/fhir/Sleep|$ARGS_VAR:start_date";
+
+#[, possible js
+BasicRule  wl:1310 "mz:$URL:/api/fhir/Observation|$BODY_VAR:code";
+BasicRule  wl:1310 "mz:$URL_X:/api/fhir/Observation/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:code";
+BasicRule  wl:1310 "mz:$URL:/api/fhir/Document|$BODY_VAR:div";
+BasicRule  wl:1310 "mz:$URL:/api/fhir/Document|$BODY_VAR:display";
+BasicRule  wl:1310 "mz:$URL:/api/fhir/MedicationPrescription|$BODY_VAR:display";
+BasicRule  wl:1310 "mz:$URL:/api/fhir/Exercise|$BODY_VAR:code";
+BasicRule  wl:1310 "mz:$URL:/api/fhir/Document|BODY";
+BasicRule  wl:1310 "mz:$URL:/api/fhir/MedicationPrescription|BODY";
+BasicRule  wl:1310 "mz:$URL:/api/fhir/Exercise|BODY";
+#BasicRule  wl:1310 "mz:$BODY_VAR:code";
+BasicRule  wl:1310 "mz:$BODY_VAR:display";
+BasicRule  wl:1310 "mz:$BODY_VAR:div";
+BasicRule  wl:1310 "mz:$URL:/api/api/edu/InfoButton/query|$ARGS_VAR:mainsearchcriteria.v.dn";
+BasicRule  wl:1310 "mz:$URL_X:/api/fhir/Configuration/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:text";
+BasicRule  wl:1310 "mz:$URL_X:/api/fhir/Configuration/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:code";
+
+#], possible js
+#BasicRule  wl:1311 "mz:$BODY_VAR:code";
+BasicRule  wl:1311 "mz:$BODY_VAR:display";
+BasicRule  wl:1311 "mz:$BODY_VAR:div";
+BasicRule  wl:1311 "mz:$URL:/api/api/edu/InfoButton/query|$ARGS_VAR:mainsearchcriteria.v.dn";
+BasicRule  wl:1311 "mz:$URL:/api/fhir/Observation|$BODY_VAR:code";
+BasicRule  wl:1311 "mz:$URL_X:/api/fhir/Observation/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:code";
+BasicRule  wl:1311 "mz:$URL:/api/fhir/Document|$BODY_VAR:div";
+BasicRule  wl:1311 "mz:$URL:/api/fhir/Document|$BODY_VAR:display";
+BasicRule  wl:1311 "mz:$URL:/api/fhir/MedicationPrescription|$BODY_VAR:display";
+BasicRule  wl:1311 "mz:$URL:/api/fhir/Exercise|$BODY_VAR:code";
+BasicRule  wl:1311 "mz:$URL:/api/fhir/Observation|BODY";
+BasicRule  wl:1311 "mz:$URL:/api/fhir/Document|BODY";
+BasicRule  wl:1311 "mz:$URL:/api/fhir/MedicationPrescription|BODY";
+BasicRule  wl:1311 "mz:$URL:/api/fhir/Exercise|BODY";
+BasicRule  wl:1311 "mz:$URL_X:/api/fhir/Configuration/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:text";
+BasicRule  wl:1311 "mz:$URL_X:/api/fhir/Configuration/(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}|$BODY_VAR:code";
+
+#double encoding ! - %[2|3].
+BasicRule  wl:1315 "mz:$HEADERS_VAR:cookie";

@@ -1,0 +1,21 @@
+{
+    "documents": [
+        {
+            "id": "User/54321",
+            "content": {
+                "resourceType": "User",
+                "username": "Administrator",
+                "family": "Admin",
+                "given": "Admin",
+                "status": "active",
+                "roles": [
+                    {
+                        "reference": "Role/administrator",
+                        "display": "Administrator"
+                    }
+                ],
+                "password": "iHN12uxiqfAtMqY8nhTHZBqaikLk+o9lkOuSjZdEtXu1BXodIn5NQO+RGsAwWQu84r/beBA/8LeQlM7oQlYB9Q=="
+            }
+        }
+    ]
+}

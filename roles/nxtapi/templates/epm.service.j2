@@ -1,0 +1,14 @@
+[Unit]
+Description=EPM ZMQ Service Unit.
+
+[Service]
+WorkingDirectory=/opt/nxt/
+ExecStartPre=/usr/bin/sleep 5
+ExecStart=/usr/bin/java -jar /opt/nxt/epm/EPMWrapperService-1.0.2-final.jar
+Restart=always
+User=nxtapi
+Group=nxtapi
+StartLimitInterval=0
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,122 @@
+---
+
+- name: Create nxt directory
+  file: dest={{ nxt_api_home_path }} state=directory owner={{ nxt_api_user }}
+
+- name: Create output and misc services directories
+  file: dest={{ item }} state=directory owner={{ nxt_api_user }} group={{ nxt_api_user }}
+  with_items:
+    - "{{ nxt_api_home_path }}/output"
+    - "{{ nxt_api_home_path }}/fitbit"
+    - "{{ nxt_api_home_path }}/fitbit/work"
+    - "{{ nxt_api_home_path }}/fitbit/error"
+    - "{{ nxt_api_home_path }}/output/iis"
+    - "{{ nxt_api_home_path }}/output/lri"
+    - "{{ nxt_api_home_path }}/output/syndromic"
+    - "{{ nxt_api_home_path }}/output/elr"
+    - "{{ nxt_api_home_path }}/output/ncpdp"
+    - "{{ nxt_api_home_path }}/output/directDeadLetters"
+    - "{{ nxt_api_home_path }}/output/cancerReports"
+    - "{{ nxt_api_home_path }}/output/cqm"
+
+- name: Deploy API files
+  synchronize: src=../../../../{{ target_source }}-dist-app/api/ dest={{ nxt_api_home_path }}
+
+- name: Copy API config file
+  template: src={{ target_source }}/config.js.j2 dest={{ nxt_api_home_path }}/config.js
+
+- name: Copy EPM properties file
+  template: src=epm.properties.j2 dest={{ nxt_api_home_path }}/epm.properties
+
+- name: Copy EPM config file
+  template: src=epm_logback_config.xml.j2 dest={{ nxt_api_home_path }}/epm_logback_config.xml
+
+- name: Copy EPM config file
+  template: src=epm_logback_config.xml.j2 dest={{ nxt_api_home_path }}/epm_logback_config.xml
+
+- name: Create certs directory
+  file: dest="{{ nxt_api_home_path }}/certs" state=directory owner={{ nxt_api_user }} group={{ nxt_api_user }}
+
+- name: Copy client certificates
+  copy: src={{ item }} dest="{{ nxt_api_home_path }}/certs/" owner={{ nxt_api_user }} group={{ nxt_api_user }}
+  with_fileglob:
+    - certs/client.*
+    - certs/*.p12
+
+- name: Install java when epm enabled
+  become: true
+  yum: name=java-1.7.0-openjdk state=present
+  when: nxt_api_epm_enabled == "true"
+
+- name: Install libxml2, libxslt, zeromq3-devel, bzip2 and urw-fonts
+  yum: name={{ item }} state=present
+  with_items:
+    - libxml2-devel
+    - libxslt-devel
+    - zeromq3-devel
+    - bzip2
+    - urw-fonts
+
+- name: Copy NXTAPI modules
+  unarchive: src=../{{ target_source }}-dist-app/modules/node_modules.tgz dest={{ nxt_api_home_path }}/
+
+# - name: NPM install
+#   command: npm install
+#   args:
+#     chdir: "{{ nxt_api_home_path }}"
+#   become: true
+#   become_user: "{{ nxt_api_user }}"
+
+- name: NPM rebuild
+  command: npm rebuild
+  args:
+    chdir: "{{ nxt_api_home_path }}"
+  become: true
+
+- name: Change nxt directory owner
+  file: dest="{{ nxt_api_home_path }}" state=directory
+        owner={{ nxt_api_user }} group={{ nxt_api_user }}
+        recurse=yes
+  become: true
+
+- name: Make log dir
+  file: name={{ nxt_api_log_path }} state=directory owner={{ nxt_api_user }}
+
+- name: Copy systemd scripts for NXTAPI, NXTWORKER, NXTOPERATIONS, NXTOPERATIONS2
+  template: src="{{ item }}.service.j2" dest="/etc/systemd/system/{{ item }}.service" mode=0771 owner={{ nxt_api_user }}
+  with_items:
+    - nxtapi
+    - nxtworker
+    - nxtoperations
+    - nxtoperations2
+  when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '>=') }}
+
+- name: Copy systemd script for EPM
+  template: src="{{ item }}.service.j2" dest="/etc/systemd/system/{{ item }}.service" mode=0771 owner={{ nxt_api_user }}
+  with_items:
+    - epm
+  when: nxt_api_epm_enabled == "true" and ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '>=') }}
+
+- name: Copy init.d scripts for NXTAPI, NXTWORKER, NXTOPERATIONS, NXTOPERATIONS2
+  template: src="{{ item }}.init.j2" dest="/etc/init.d/{{ item }}" mode=0771 owner={{ nxt_api_user }}
+  with_items:
+    - nxtapi
+    - nxtworker
+    - nxtoperations
+    - nxtoperations2
+  when: ansible_os_family == "Debian" or (ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '<') }})
+
+- name: Disable checkAuthorization
+  become: true
+  lineinfile: dest={{ nxt_api_home_path }}/config.js
+    regexp="^config.checkAuthorization = true;"
+    line="config.checkAuthorization = false;"
+    state=present
+
+- name: Enable NXTApi service
+  service: name=nxtapi enabled=yes
+
+#- name: Debug1
+#  debug: msg="ansible_distribution {{ ansible_distribution }}, ansible_os_family {{ ansible_os_family }}, ansible_distribution_version {{ ansible_distribution_version }}, compare {{ ansible_distribution_version | version_compare('7.0', '<') }}"
+#  when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
+

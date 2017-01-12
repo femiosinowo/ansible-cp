@@ -1,0 +1,91 @@
+---
+
+- name: Install database servers
+  hosts: db
+  become: true
+  vars:
+    couchbase_server_primary_node: "{{groups['dbmaster'][0]}}"
+  roles:
+    - java
+    - couchbase
+    - elasticsearch
+    - postgresql
+
+- name: Configure postgresql slave replication
+  hosts: dbslave
+  tasks:
+    - name: Stop slave postgres service
+      service: name=postgresql-{{postgres_version}} state=stopped
+      become: true
+
+    - name: Create a .pgpass file
+      template:
+        src: roles/postgresql/templates/pgpass.j2
+        dest: "/var/lib/pgsql/.pgpass"
+        owner: "{{postgresql_admin_user}}"
+        group: "{{postgresql_admin_user}}"
+        mode: 0600
+      become: true
+      become_user: postgres
+
+    - name: Remove any existing postgres database
+      shell: rm -rf /var/lib/pgsql/{{postgres_version}}/data/*
+      become: true
+      become_user: postgres
+
+    - name: Restore a backup of master
+      command: pg_basebackup -h {{groups['dbmaster'][0]}} -D /var/lib/pgsql/{{postgres_version}}/data -U replication -v -P -X stream
+      become: true
+      become_user: postgres
+
+    - name: Enable postgres replication - in logfile segments 16MB each
+      lineinfile: dest=/var/lib/pgsql/{{postgres_version}}/data/postgresql.conf
+        regexp='^#hot_standby = off'
+        line="hot_standby = on"
+        state=present
+      become: true
+      become_user: postgres
+
+    - name: Create a recovery.conf file
+      template:
+        src: roles/postgresql/templates/recovery.conf.j2
+        dest: "/var/lib/pgsql/{{postgres_version}}/data/recovery.conf"
+        owner: "{{postgresql_admin_user}}"
+        group: "{{postgresql_admin_user}}"
+        mode: 0640
+      become: true
+      become_user: postgres
+
+    - name: Start salve postgres service
+      service: name=postgresql-{{postgres_version}} state=started
+      become: true
+
+- name: Initialize couchbase cluster, add nodes and rebalance
+  hosts: dbmaster
+  become: true
+  vars:
+    couchbase_server_primary_node: "{{groups['dbmaster'][0]}}"
+  tasks:
+#    - name: rest call
+#      command: "curl -XGET -vvv --url http://localhost:8091/pools/default/buckets/fhir/nodes"
+#      register: result
+#    - name: debug1
+#      debug: var=(result.stdout|from_json).servers
+    - name: Initialize primary node
+      shell: "{{ couchbase_server_home_path }}/bin/couchbase-cli cluster-init -c {{ couchbase_server_primary_node }}:{{ couchbase_server_admin_port }} --user={{ couchbase_server_admin }} --password={{ couchbase_server_password }} --cluster-init-username={{ couchbase_server_admin }} --cluster-init-password={{ couchbase_server_password }} --cluster-init-port={{couchbase_server_admin_port}} --cluster-init-ramsize={{ couchbase_server_ram }}"
+    - name: Join additional cluster nodes
+      shell: "{{ couchbase_server_home_path }}/bin/couchbase-cli server-add -c {{ couchbase_server_primary_node }}:{{ couchbase_server_admin_port }} --user={{ couchbase_server_admin }} --password={{ couchbase_server_password }} --server-add={{hostvars[[item][0]]['inventory_hostname']}}:{{ couchbase_server_admin_port }} --server-add-username={{ couchbase_server_admin }} --server-add-password={{ couchbase_server_password }}"
+      with_items: "{{groups['dbslave']}}"
+      when: "{{groups['dbslave']}} is defined"
+      ignore_errors: yes
+    - name: Rebalance cluster
+      shell: "{{ couchbase_server_home_path }}/bin/couchbase-cli rebalance -c {{ couchbase_server_primary_node }}:{{ couchbase_server_admin_port }} --user={{ couchbase_server_admin }} --password={{ couchbase_server_password }}"
+      ignore_errors: yes
+
+- name: Initialize database (data)
+  hosts: dbmaster
+  become: true
+  vars:
+    couchbase_server_primary_node: "{{groups['dbmaster'][0]}}"
+  roles:
+    - nxt_data

@@ -1,0 +1,14 @@
+[Unit]
+Description=NXTApi Service Unit.
+
+[Service]
+WorkingDirectory={{ nxt_api_home_path }}
+ExecStartPre=/usr/bin/sleep 5
+ExecStart=/usr/bin/node {{ nxt_api_home_path }}/app.js
+Restart=always
+User={{ nxt_api_user }}
+Group={{ nxt_api_user }}
+StartLimitInterval=0
+
+[Install]
+WantedBy=multi-user.target

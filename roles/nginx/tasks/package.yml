@@ -1,0 +1,23 @@
+---
+
+- name: Install nginx-repo
+  copy: src=nginx-repo.repo dest=/etc/yum.repos.d/ owner=root group=root mode=0644
+  become: true
+
+- name: Initialize nginx-repo RedHat
+  replace: dest=/etc/yum.repos.d/nginx-repo.repo regexp='^(<osname>)*$' replace='rhel'
+  when: ansible_distribution == "RedHat"
+  become: true
+
+- name: Initialize nginx-repo CentOS
+  replace: dest=/etc/yum.repos.d/nginx-repo.repo regexp='<osname>' replace='centos'
+  when: ansible_distribution == "CentOS"
+  become: true
+
+- name: Import public signing key
+  rpm_key: state=present key=http://nginx.org/keys/nginx_signing.key
+
+- name: Install nginx RedHat/CentOS
+  yum: name="nginx" enablerepo="nginx" state=present
+  when: ansible_os_family == "RedHat"
+  become: true

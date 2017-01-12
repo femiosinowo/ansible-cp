@@ -1,0 +1,1 @@
+psql NXT_TASKS -f /opt/database/postgresql/NXT_TASKS/Function/upsert_task.sql

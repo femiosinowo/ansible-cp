@@ -1,0 +1,79 @@
+server {
+    # listen       443 ssl;
+    listen     80;
+    server_name  localhost;
+    # ssl_certificate uspshealth.pem;
+    # ssl_certificate_key uspshealth.key;
+
+    #charset koi8-r;
+    #access_log  /var/log/nginx/log/host.access.log  main;
+
+    location / {
+        {% if nginx_install_method == "source" and nginx_source_modules_included.naxsi_module is defined %}
+        include /etc/nginx/naxsi.rules;
+        {% endif %}
+        root   /usr/local/www/nxt;
+        index  index.html index.htm;
+    }
+
+    location /api/ {
+        {% if nginx_install_method == "source" and nginx_source_modules_included.naxsi_module is defined %}
+        include /etc/nginx/naxsi.rules;
+        {% endif %}
+        proxy_pass http://{{ hostvars[inventory_hostname].app_server }}:8008/;
+    }
+
+#    location /health/ {
+#        proxy_pass http://{{ hostvars[inventory_hostname].app_server }}:8009/health/;
+#    }
+
+    location /edu/ {
+        {% if nginx_install_method == "source" and nginx_source_modules_included.naxsi_module is defined %}
+        include /etc/nginx/naxsi.rules;
+        {% endif %}
+        proxy_pass http://apps2.nlm.nih.gov/medlineplus/services/;
+    }
+
+    location /login {
+        {% if nginx_install_method == "source" and nginx_source_modules_included.naxsi_module is defined %}
+        include /etc/nginx/naxsi.rules;
+        {% endif %}
+        rewrite ^ /#!$uri redirect;
+        break;
+    }
+
+    location /appsAndDevices/fitbit {
+        {% if nginx_install_method == "source" and nginx_source_modules_included.naxsi_module is defined %}
+        include /etc/nginx/naxsi.rules;
+        {% endif %}
+        rewrite ^ /#!$uri redirect;
+        break;
+    }
+
+    location /appsAndDevices/withings {
+        {% if nginx_install_method == "source" and nginx_source_modules_included.naxsi_module is defined %}
+        include /etc/nginx/naxsi.rules;
+        {% endif %}
+        rewrite ^ /#!$uri redirect;
+        break;
+    }
+
+    location /weather/ {
+        {% if nginx_install_method == "source" and nginx_source_modules_included.naxsi_module is defined %}
+        include /etc/nginx/naxsi.rules;
+        {% endif %}
+        proxy_pass http://api.wunderground.com/api/bd95a2598e0f078a/;
+    }
+
+    location /feed/ {
+        {% if nginx_install_method == "source" and nginx_source_modules_included.naxsi_module is defined %}
+        include /etc/nginx/naxsi.rules;
+        {% endif %}
+        proxy_pass http://ajax.googleapis.com/ajax/services/feed/;
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+}

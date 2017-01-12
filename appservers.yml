@@ -1,0 +1,134 @@
+---
+
+- name: Install application servers
+  hosts: app
+  become: true
+  roles:
+    - nxt_init
+    - nxtapi
+
+- name: Insert initial database resources
+  hosts: appapi[0]
+  tasks:
+    - name: Bulk Insert Couchbase Documents
+      command: "node bulk_insert.js -f ../../database/couchbase/data -y"
+      args:
+        chdir: "{{ nxt_api_base_path }}/tools/BulkOperations"
+
+- name: Start nxtapi
+  hosts: app
+  become: true
+  tasks:
+    - name: Start NXTApi service
+      service: name=nxtapi state=restarted
+
+- name: Insert elasticsearch resources
+  hosts: appapi[0]
+  become: true
+  tasks:
+    - name: Wait for NXT REST API
+      wait_for: "host={{ inventory_hostname }} port={{ nxt_api_port }} delay=5"
+
+    - name: Login to nxtapi
+      command: "curl -XPOST -vvv -H \"Content-Type: application/json\" -d '{\"username\": \"{{ fhir_superuser_name }}\", \"password\": \"{{ fhir_superuser_password }}\"}' -b cookies -c cookies --url http://127.0.0.1:{{ nxt_api_port }}/security/login"
+      # delegate_to: 127.0.0.1
+      # args:
+      #   chdir: "{{ nxt_api_base_path }}/database"
+      become: true
+      #become_user: "{{ nxt_api_user }}"
+
+    - name: List common coding systems
+      shell: "ls {{ nxt_api_base_path }}/database/elastic-search/data/ValueSet/Common/*.json"
+      register: file_list
+      become: true
+
+    - name: Insert common coding systems
+      command: "curl -XPOST -H \"Content-Type: application/json\" -d@{{ item }} -b cookies -c cookies --url http://127.0.0.1:{{ nxt_api_port }}/voc/ValueSet"
+      # delegate_to: 127.0.0.1
+      # uri: url="{{ nxt_api_base_url }}:{{ nxt_api_port }}/voc/ValueSet" method=POST body="{{ lookup('file', '{{ item }}' }}"
+      with_items:
+        - "{{ file_list.stdout_lines }}"
+      become: true
+
+    - name: List coding systems
+      shell: "ls {{ nxt_api_base_path }}/database/elastic-search/data/ValueSet/CS/*.json"
+      register: file_list
+      become: true
+
+    - name: Insert coding systems
+      command: "curl -XPOST -H \"Content-Type: application/json\" -d@{{ item }} -b cookies -c cookies --url http://127.0.0.1:{{ nxt_api_port }}/voc/ValueSet"
+      # delegate_to: 127.0.0.1
+      # uri: url="{{ nxt_api_base_url }}:{{ nxt_api_port }}/voc/ValueSet" method=POST body="{{ lookup('file', '{{ item }}' }}"
+      with_items:
+        - "{{ file_list.stdout_lines }}"
+      become: true
+
+    - name: Wait for concept creation
+      wait_for: "path={{ nxt_api_log_path }}/voc.log search_regex='Successfully imported: Snomed'"
+      # pause: minutes=2
+
+    - name: List valuesets
+      shell: "ls {{ nxt_api_base_path }}/database/elastic-search/data/ValueSet/VS/*.json"
+      register: file_list
+      become: true
+
+    - name: Insert valuesets
+      command: "curl -XPOST -H \"Content-Type: application/json\" -d@{{ item }} -b cookies -c cookies --url http://127.0.0.1:{{ nxt_api_port }}/voc/ValueSet"
+      # delegate_to: 127.0.0.1
+      # uri: url="{{ nxt_api_base_url }}:{{ nxt_api_port }}/voc/ValueSet" method=POST body="{{ lookup('file', '{{ item }}' }}"
+      with_items:
+        - "{{ file_list.stdout_lines }}"
+      become: true
+
+    - name: Bulk insert laboratory test concepts
+      command: "node bulk_insert_evs_concepts.js -f ../../database/elastic-search/data/Concept -y"
+      args:
+        chdir: "{{ nxt_api_base_path }}/tools/BulkOperations"
+      # become_user: "{{ nxt_api_user }}"
+
+- name: After insert elasticsearch resources
+  hosts: appapi[0]
+  become: true
+  tasks:
+    - name: Enable checkAuthorization
+      become: true
+      lineinfile: dest={{ nxt_api_home_path }}/config.js
+        regexp="^config.checkAuthorization = false;"
+        line="config.checkAuthorization = true;"
+        state=present
+      when: "{{ target_source == 'phim' }}"
+
+    - name: Enable xsrf
+      become: true
+      lineinfile: dest={{ nxt_api_home_path }}/config.js
+        regexp="^config.auth.xsrfEnabled = false;"
+        line="config.auth.xsrfEnabled = true;"
+        state=present
+      when: "{{ nginx_https_enabled == 'true' }}"
+
+    - name: Enable secure cookies
+      become: true
+      lineinfile: dest={{ nxt_api_home_path }}/config.js
+        regexp="^config.auth.secureCookies = false;"
+        line="config.auth.secureCookies = true;"
+        state=present
+      when: "{{ nginx_https_enabled == 'true' }}"
+
+- name: Restart nxtapi
+  hosts: app
+  become: true
+  tasks:
+    - name: Restart NXTApi service
+      service: name=nxtapi state=restarted
+
+- name: Activate NXTWorker service
+  hosts: app
+  become: true
+  tasks:
+    - name: Enable NXTWorker service
+      service: name=nxtworker enabled=yes
+      become: true
+
+    - name: Start NXTWorker service
+      service: name=nxtworker state=restarted
+      become: true

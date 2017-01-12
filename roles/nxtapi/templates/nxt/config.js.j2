@@ -1,0 +1,718 @@
+﻿var os = require('os');
+var config = {};
+
+//REST service
+config.port = {{ nxt_api_port }};
+config.baseUrl = '{{ nxt_api_base_url }}/api';
+
+config.logFolder = '{{ nxt_api_log_path }}';
+
+//FHIR
+config.baseFhirUrl = config.baseUrl + '/fhir/';
+config.useAbsoluteLocationUri = false; //when referencing Binary and Document resources, use absolute or relative uri (e.g. in DocumentReference.location or Message.body/attachments); Values: true/false; Default value: false
+
+config.removableResources = [
+    'ConceptMap',
+    'Counter',
+    'DiagnosticReport',
+    'List',
+    'MessageHeader',
+    'Namespace',
+    'Observation',
+    'ValueSet',
+    'User',
+    'Role',
+    'Task',
+    'Message',
+    'EmailAccount',
+    'Condition',
+    'MedicationPrescription',
+    'AllergyIntolerance',
+    'Appointment',
+    'Exercise',
+    'Sleep',
+    'Topic',
+    'Comment',
+    'Document',
+    'Specimen',
+    'Immunization',
+    'Group',
+    'Procedure',
+    'Contract',
+    'RelatedPerson',
+    'CDSRule',
+    'CancerDiagnosis',
+    'Amendment',
+    'OrderResponse',
+    'ProcedureRequest',
+    'ReferralRequest',
+    'DiagnosticOrder',
+    'EncounterOrder',
+    'Goal',
+    'NutritionOrder',
+    'Device',
+    'DeviceTestConfiguration',
+    'Template',
+    'FilterData',
+    'FeeScheduleItem',
+    'DocumentTemplate',
+    'Claim',
+    'BoardTemplate',
+    'Schedule',
+    'Slot',
+    'Consent',
+    'Board'
+];
+
+// requests that have pragma header 'IW-X-POLL' won't reset session expiry
+config.polling = {};
+config.polling.enabled = {{ nxt_api_polling_enabled|lower }};
+config.polling.pragmaHeader = 'IW-X-POLL';
+
+//appointment
+config.tools = {};
+config.tools.appointmentNotifier = {};
+config.tools.appointmentNotifier.logging = {};
+config.tools.appointmentNotifier.logging.level = 'debug';
+config.tools.appointmentNotifier.logging.filename = config.logFolder + 'tools.appointmentNotifier.log';
+config.tools.appointmentNotifier.logging.period = '1d';
+config.tools.appointmentNotifier.logging.count = 10;
+
+//email notifier
+config.emailNotifier = {};
+config.emailNotifier.enabled = {{ nxt_api_email_notifier_enabled|lower }};
+config.emailNotifier.webUrl = '{{ nxt_ui_base_url }}';
+config.emailNotifier.expiry = 5; //days
+config.emailNotifier.senderEmailAddress = '{{ nxt_api_email_notifier_sender }}';
+config.emailNotifier.host = '{{ nxt_api_email_notifier_host }}';
+config.emailNotifier.port = {{ nxt_api_email_notifier_port }};
+config.emailNotifier.username = '{{ nxt_api_email_notifier_user }}';
+config.emailNotifier.password = '{{ nxt_api_email_notifier_password }}';
+config.emailNotifier.passwordTemplate = { path: './templates/email-templates/email_password.template', title: 'Change account password' };
+config.emailNotifier.secondFactorTemplate = { path: './templates/email-templates/email_token.template', title: 'One-time token' };
+config.emailNotifier.usernameTemplate = { path: './templates/email-templates/email_username.template', title: 'Account information' };
+config.emailNotifier.confirmationTemplate = { path: './templates/email-templates/email_confirmation.template', title: 'Email address confirmation' };
+config.emailNotifier.addAuthorizationTemplate = { path: './templates/email-templates/email_add_authorization.template', title: 'Authorization granted' };
+config.emailNotifier.revokeAuthorizationTemplate = { path: './templates/email-templates/email_revoke_authorization.template', title: 'Authorization revoked' };
+config.emailNotifier.eventNotificationTemplate = { path: './templates/email-templates/email_event_notification.template' };
+config.emailNotifier.eventAppointmentTemplate = { path: './templates/email-templates/email_event_appointment.template' };
+
+//sms
+config.smsNotifier = {};
+config.smsNotifier.enabled = false;
+config.smsNotifier.eventNotificationTemplate = { path: './templates/sms-templates/sms_event_notification.template' };
+config.smsNotifier.eventAppointmentTemplate = { path: './templates/sms-templates/sms_event_appointment.template' };
+config.smsNotifier.countryPrefix = '1';
+
+config.auth = {};
+config.auth.xsrfEnabled = false;
+config.auth.secureCookies = false;
+config.auth.credentials = {};
+config.auth.credentials.googleOpenIdConnect = {};
+config.auth.credentials.googleOpenIdConnect.enabled = false;
+config.auth.credentials.googleOpenIdConnect.scope = 'openid email';
+config.auth.credentials.googleOpenIdConnect.authorizationURL = 'https://accounts.google.com/o/oauth2/auth';
+config.auth.credentials.googleOpenIdConnect.clientID = '{{ nxt_api_google_clientID }}';
+config.auth.credentials.googleOpenIdConnect.clientSecret = '{{ nxt_api_google_clientSecret }}';
+config.auth.credentials.googleOpenIdConnect.tokenURL = 'https://www.googleapis.com/oauth2/v3/token';
+config.auth.credentials.googleOpenIdConnect.callbackURL = '{{ nxt_api_google_callback }}';
+config.auth.credentials.googleOpenIdConnect.userInfoURL = 'https://www.googleapis.com/plus/v1/people/me/openIdConnect';
+
+config.auth.credentials.fitbit = {};
+config.auth.credentials.fitbit.clientID = '{{ nxt_api_fitbit_clientID }}';
+config.auth.credentials.fitbit.clientSecret = '{{ nxt_api_fitbit_clientSecret }}';
+config.auth.credentials.fitbit.callbackURL = '{{ nxt_api_fitbit_callback }}';
+config.auth.credentials.fitbit.accessTokenURL = 'https://api.fitbit.com/oauth/access_token';
+config.auth.credentials.fitbit.requestTokenURL = 'https://api.fitbit.com/oauth/request_token';
+config.auth.credentials.fitbit.authorizationURL = 'https://fitbit.com/oauth/authorize';
+config.auth.credentials.fitbit.resourceBaseURL = 'https://api.fitbit.com/1/user/-/';
+
+config.auth.credentials.withings = {};
+config.auth.credentials.withings.clientID = '{{ nxt_api_withings_clientID }}';
+config.auth.credentials.withings.clientSecret = '{{ nxt_api_withings_clientSecret }}';
+config.auth.credentials.withings.callbackURL = '{{ nxt_api_withings_callback }}';
+config.auth.credentials.withings.accessTokenURL = 'https://oauth.withings.com/account/access_token';
+config.auth.credentials.withings.requestTokenURL = 'https://oauth.withings.com/account/request_token';
+config.auth.credentials.withings.authorizationURL = 'https://oauth.withings.com/account/authorize';
+config.auth.credentials.withings.resourceBaseURL = 'https://wbsapi.withings.net/';
+
+//data access layer
+config.dal = {};
+config.dal.encryption = {};
+config.dal.encryption.enabled = {{ nxt_api_dal_encryption_enabled|lower }};
+{# TODO #}
+config.dal.encryption.provider = '{{ nxt_api_dal_encryption_provider }}'; // 'nodejs', 'safenet'
+config.dal.encryption.providers = {};
+config.dal.encryption.providers.nodejs = {};
+config.dal.encryption.providers.nodejs.password = '{{ nxt_api_dal_encryption_providers_nodejs_password }}'; // encryption key string
+config.dal.encryption.providers.nodejs.algorithm = 'aes-256-cbc';
+config.dal.encryption.providers.safenet = {};
+config.dal.encryption.providers.safenet.threadCount = 64;
+if (config.dal.encryption.enabled === true && config.dal.encryption.provider === 'safenet')
+    process.env.UV_THREADPOOL_SIZE = config.dal.encryption.providers.safenet.threadCount;
+config.dal.encryption.providers.safenet.libPath = 'C:\\Program Files\\SafeNet\\LunaClient\\cryptoki.dll'; // SafeNet cryptoki library file path (windows)
+// config.dal.encryption.providers.safenet.libPath = '/usr/safenet/lunaclient/lib/libCryptoki2_64.so'; // SafeNet cryptoki library file path (linux)
+config.dal.encryption.providers.safenet.slotLabel = '';  // slot label, (high availability virtual slot or HSM physical slot)
+config.dal.encryption.providers.safenet.keyLabel = ''; // label to identify the encryption key located on the HSM devices
+config.dal.encryption.providers.safenet.debug = false; // allow hsmcrypto module to print debug info to stdout
+config.dal.encryption.providers.safenet.password = ''; // hsm partition password
+
+config.dal.storage = {};
+config.dal.storage.fhir = {};
+config.dal.storage.fhir.enabled = true;
+config.dal.storage.fhir.type = 'couchbase';
+config.dal.storage.fhir.host = ['{{ groups['dbmaster'][0] }}:8091'];
+config.dal.storage.fhir.bucket = 'fhir';
+config.dal.storage.fhir.operationTimeout = 25000;
+config.dal.storage.fhir.connectionTimeout = 20000;
+config.dal.storage.fhir.encryption = false;
+config.dal.storage.fhir.indexing = false;
+
+config.dal.storage.sessions = {};
+config.dal.storage.sessions.enabled = true;
+config.dal.storage.sessions.type = 'couchbase';
+config.dal.storage.sessions.host = ['{{ groups['dbmaster'][0] }}:8091'];
+config.dal.storage.sessions.bucket = 'sessions';
+config.dal.storage.sessions.operationTimeout = 25000;
+config.dal.storage.sessions.connectionTimeout = 20000;
+config.dal.storage.sessions.encryption = false;
+config.dal.storage.sessions.indexing = false;
+
+config.dal.storage.operations = {};
+config.dal.storage.operations.enabled = false;
+config.dal.storage.operations.type = 'couchbase';
+config.dal.storage.operations.host = ['{{ groups['dbmaster'][0] }}:8091'];
+config.dal.storage.operations.bucket = 'operations';
+config.dal.storage.operations.operationTimeout = 25000;
+config.dal.storage.operations.connectionTimeout = 20000;
+config.dal.storage.operations.encryption = false;
+config.dal.storage.operations.indexing = false;
+
+config.dal.storage.audit = {};
+
+{% if nxt_api_storage_audit_type == 'couchbase' %}
+    config.dal.storage.audit.type = 'couchbase';
+    config.dal.storage.audit.enabled = true;
+    config.dal.storage.audit.host = ['{{ groups['dbmaster'][0] }}:8091'];
+    config.dal.storage.audit.index = 'audit_test';
+    config.dal.storage.audit.indexing = false;
+    config.dal.storage.audit.bucket = 'audit';
+    config.dal.storage.audit.encryption = false;
+    config.dal.storage.audit.operationTimeout = 25000;
+    config.dal.storage.audit.connectionTimeout = 20000;
+{% endif %}
+{% if nxt_api_storage_audit_type == 'postgresql' %}
+    config.dal.storage.audit.type = 'postgresql';
+    config.dal.storage.audit.enabled = true;
+    config.dal.storage.audit.connectionString = "postgres://{{ audit_db_user }}:{{ audit_db_password }}@{{ groups['dbmaster'][0] }}/NXT_AUDIT";
+    config.dal.storage.audit.encryption = false;
+    config.dal.storage.audit.index = 'audit';
+    config.dal.storage.audit.indexing = true;
+{% endif %}
+config.dal.storage.audithash = {};
+config.dal.storage.audithash.type = 'couchbase';
+config.dal.storage.audithash.enabled = false;
+config.dal.storage.audithash.host = ['{{ groups['dbmaster'][0] }}:8091'];
+config.dal.storage.audithash.indexing = false;
+config.dal.storage.audithash.bucket = 'audithash';
+config.dal.storage.audithash.encryption = false;
+config.dal.storage.audithash.operationTimeout = 25000;
+config.dal.storage.audithash.connectionTimeout = 20000;
+
+config.dal.index = {};
+config.dal.index.apiVersion = '1.5';
+config.dal.index.host = ['{{ groups['dbmaster'][0] }}:9200'];
+config.dal.index.requestTimeout = 200000;
+
+
+config.enablePatientOperations = false;
+config.transactionPatientMatchIdentifier = 'http://hl7.org/fhir/sid/us-ssn';
+
+// http basic authentication (used for the patient operations endpoints)
+config.auth.credentials.basic  = {};
+config.auth.credentials.basic.username = 'Admin';
+config.auth.credentials.basic.password = 'Pass.';
+
+//Coachbase
+config.couchbaseUrl = '{{ groups['dbmaster'][0] }}:8091';
+config.couchbaseBucket = 'fhir';
+config.couchbaseInitTimeout = 20000; //20s timeout on initiating connection
+config.couchbaseRequestTimeout = 25000; //2.5s timeout on operation request (default couchbase value)
+
+//default output folder
+config.outputFolder = '{{ nxt_api_outputfolder }}' || os.tmpdir();
+
+//operations worker
+config.operations = {};
+config.operations.enabled = false;
+config.operations.couchbaseBucket = 'operations';
+config.operations.worker = {};
+config.operations.worker.pollInterval = 5; //seconds
+config.operations.worker.bulkSize = 10;
+config.operations.worker.logFile = config.logFolder + 'operationsWorker.log';
+config.operations.worker.vocLogFile = config.logFolder + 'operationsWorker-voc.log';
+config.operations.worker.validationLogFile = config.logFolder + 'operationsWorker-validation.log';
+config.operations.worker.logPeriod = '1d'; //one of "h"(hours), "d"(days), "w"(weeks), "m"(months), "y"(years)
+config.operations.worker.logCount = 10; //number of rotated files to keep
+config.operations.worker.logLevel = 'debug';
+
+//operations-worker2
+config.operations2 = {};
+config.operations2.worker = {};
+config.operations2.worker.pollInterval = 3; //seconds
+config.operations2.worker.bulkSize = 10;
+config.operations2.worker.logFile = config.logFolder + 'operationsWorker2.log';
+config.operations2.worker.logPeriod = '1d'; //one of "h"(hours), "d"(days), "w"(weeks), "m"(months), "y"(years)
+config.operations2.worker.logCount = 10; //number of rotated files to keep
+config.operations2.worker.logLevel = 'debug';
+config.operations2.workerConnectionString = "postgres://{{ operations_db_user }}:{{ operations_db_password }}@{{ groups['dbmaster'][0] }}/NXT_OPERATIONS";
+config.operations2.worker.enableLri = false; //default: false
+config.operations2.worker.enableElr = false; //default: false
+config.operations2.worker.enableSyndromic = false; //default: false
+
+//operations - immunization worker
+config.operations_immunization = {};
+config.operations_immunization.worker = {};
+config.operations_immunization.worker.bulkSize = 100;
+config.operations_immunization.worker.logFile = config.logFolder + 'operationsImmunizationWorker.log';
+config.operations_immunization.worker.outputFolder = config.outputFolder + '/iis';
+
+//tasks
+config.tasks = {};
+config.tasks.worker = {};
+config.tasks.worker.pollInterval = 15; //seconds
+config.tasks.worker.bulkSize = 10;
+config.tasks.worker.logFile = config.logFolder + 'tasksWorker.log';
+config.tasks.worker.logPeriod = '1d'; //one of "h"(hours), "d"(days), "w"(weeks), "m"(months), "y"(years)
+config.tasks.worker.logCount = 10; //number of rotated files to keep
+config.tasks.worker.logLevel = 'trace';
+config.tasks.worker.outputFolders = {};
+config.tasks.worker.outputFolders.ROOT = config.outputFolder;
+config.tasks.worker.outputFolders.lri = config.outputFolder + '/lri/';
+config.tasks.worker.outputFolders.syndromic = config.outputFolder + '/syndromic/';
+config.tasks.worker.outputFolders.elr = config.outputFolder + '/elr/';
+config.tasks.worker.outputFolders.ncpdp = config.outputFolder + '/ncpdp/';
+
+//aws sns
+config.aws = {};
+config.aws.accessKeyId = '';
+config.aws.secretAccessKey = '';
+config.aws.region = '';
+
+//Elastic search
+config.elasticUrl = '{{ groups['dbmaster'][0] }}:9200';
+config.elasticApiVersion = '1.5'; // 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 2.0, 2.1, master
+config.fhirIdx = 'fhir';
+config.useNestedFilter = true;
+config.elasticRequestTimeout = 200000;
+config.elasticQueryTimeout = 2000;
+
+//voc
+config.bulkSize = 10000; //split bulk operations into chunks of this size
+config.vocIdx = 'voc';
+config.baseVocUrl = config.baseUrl + '/voc/';
+config.voc = {};
+config.voc.logging = {};
+config.voc.logging.level = 'debug';
+config.voc.logging.filename = config.logFolder + 'voc.log';
+config.voc.logging.period = '1d'; //one of "h"(hours), "d"(days), "w"(weeks), "m"(months), "y"(years)
+config.voc.logging.count = 10; //number of rotated files to keep
+
+//auth
+config.sessionBucket = 'sessions';
+config.sessionTimeout = 15 * 60;//time is measured in seconds, not milliseconds
+config.baseSecurityUrl = config.baseUrl + '/security/';
+config.accountExpiry = 90; //days (0 = disable)
+config.passwordExpiry = 60; //days (0 = disable)
+config.secondFactorAuthenticationToken = 'hotp'; // 'totp' (time based) or 'hotp' (counter based)
+config.secondFactorAuthenticationParam = 0; // default 30 for 'totp' (30 sec interval), default 0 for 'hotp' (initial counter)
+config.passwordHistoryLength = 24;
+config.maxFailedLoginAttempts = {{ nxt_api_max_failed_login_attempts }}; // account will become inactive after this many consecutive failed login attempts
+config.checkAuthorization = {{ nxt_api_check_authorization|lower }};
+config.maxNumberOfAdminSessions = {{ nxt_api_max_admin_sessions }}; // limit the number of concurrent sessions for admin users to this value (0 = disable)
+config.maxNumberOfSessions = {{ nxt_api_max_sessions }}; // limit the number of concurrent sessions for any user to this value (0 = disable)
+config.useRegistrationCode = true;
+
+//authorization
+config.authorization = {};
+config.authorization.enabled = false;
+//config.authorization.method - values: legacy, resource, policies. resource = use "Resource" with resourceType and role & allowed actions instead code; policies = abac policies; legacy = legacy authorization method
+config.authorization.method = 'policies';
+config.authorization.policies = {};
+config.authorization.policies.enableCache = false;
+config.authorization.policies.endpointAccessPolicySet = 'endpointAccess';
+config.authorization.policies.resourceAccessPolicySet = 'resourceAccess';
+config.authorization.policies.defaultEffect = 'deny'; //values: deny, permit
+
+config.couchbaseDocType = 'couchbaseDocument';
+config.docType = config.couchbaseDocType + '.doc.'; //couchbaseDocument
+
+config.defaultPageSize = 10;
+config.maxPageSize = 100;
+
+config.allowUserToChangePerson = false;
+config.allowMultipleUsersPerPerson = false;
+
+//CDS
+config.enableCDS = {{ nxt_api_cds_enabled|lower }};
+config.cdsServiceUrl = '{{ nxt_api_cds_url }}';
+config.checkDDIUrl = config.cdsServiceUrl + "/checkDDI?db={{ nxt_api_cds_ddi_db }}";
+config.checkDAIUrl = config.cdsServiceUrl + "/checkDAI?db={{ nxt_api_cds_ddi_db }}";
+config.checkAllUrl = config.cdsServiceUrl + "/checkAll?db={{ nxt_api_cds_ddi_db }}";
+config.getDDSeverityUrl = config.cdsServiceUrl + "/getDDSeverity";
+config.adjustDDSeverityUrl = config.cdsServiceUrl + "/adjustDDSeverity";
+
+//infoButton
+config.infoButton = {};
+config.infoButton.queryUrl = 'https://webservices.lexi.com/rest/hl7';
+config.infoButton.docUrl = 'https://webservices.lexi.com/rest/ref';
+config.infoButton.authorizationType = 'basic';
+config.infoButton.username = '{{ nxt_api_infobutton_username }}';
+config.infoButton.password = '{{ nxt_api_infobutton_password }}';
+
+config.MeasuresConnectionString = "postgres://{{ binary_db_user }}:{{ binary_db_password }}@{{ groups['dbmaster'][0] }}/NXT_MU";
+config.enableMeasures = {{ nxt_api_measures_enabled|lower }};
+
+//boards
+config.boards = {};
+config.boards.enable = false;
+config.boardsConnectionString = "postgres://{{ binary_db_user }}:{{ binary_db_password }}@{{ groups['dbmaster'][0] }}/NXT_BOARDS";
+config.boardsLoggingPath = config.logFolder + 'boards-validation.log';
+
+//Binary endpoint
+config.BinaryConnectionString = "postgres://{{ binary_db_user }}:{{ binary_db_password }}@{{ groups['dbmaster'][0] }}/NXT_BINARY";
+config.LargeObjectBufferSize = 16384;
+config.binary = {};
+config.binary.userQuota = 70 * 1000 * 1024; // maximum user quota in bytes
+config.binary.antivirus = {};
+config.binary.antivirus.enabled = {{ nxt_api_antivirus_enabled|lower }}; //enable/disable antivirus, default: false
+config.binary.antivirus.clamav = {};
+config.binary.antivirus.clamav.tcpAddress = '127.0.0.1';
+config.binary.antivirus.clamav.tcpPort = 3310;
+config.binary.validation = {};
+config.binary.validation.allowedMimeTypes = ['application/pdf', 'application/octet-stream', 'text/xml', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'image/png', 'image/jpeg', 'image/gif', 'application/hl7-v3+xml', 'application/rtf'];
+config.binary.validation.htmlSanitizerOptions = {};
+config.binary.validation.htmlSanitizerOptions.allowedTags = [ 'html', 'head', 'title', 'body',
+          'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'p', 'ul', 'ol',
+          'nl', 'li', 'b', 'i', 'strong', 'em', 'strike', 'code', 'hr', 'br', 'div', 'span',
+          'table', 'thead', 'caption', 'tbody', 'tr', 'th', 'td', 'pre' ];
+config.binary.validation.htmlSanitizerOptions.enableOnInput = false; //default false; perform sanitization when binary enters system (upload, message body/attachment received)
+config.binary.validation.htmlSanitizerOptions.enableOnOutput = true; //default false; perform sanitization when binary is viewed/downloaded by user (view, download, but not on transmit)
+config.binary.checkDuplicate = false;
+
+//Direct
+config.baseDirectUrl = config.baseUrl + '/api/direct/';
+config.directPollInterval = 2; //seconds
+config.directPageSize = 10; //get N messages per query from Direct DB
+config.directMailDomains = ['{{ nxt_api_direct_mail_domain }}'];
+config.directServiceUrl = 'https://dev.medicasoft.us/direct/'; //url must end with '/'
+// config.directServiceUrl = 'https://dev.medicasoft.us:5000/'; //url must end with '/'
+
+config.directMaxMessageProcessingTime = 60; //seconds
+// Set DIRECT API connection mode - choose either method 1 or 2:
+config.directAccessMode = '{{ nxt_api_direct_access_mode }}';
+// // Method 1. fast connection to DIRECT API using DATABASE access whenever possible
+//config.directAccessMode = 'DB';
+config.directConnectionString = "postgres://postfix:gEh9mwfrj-@dev.medicasoft.us:5433/maildb";
+// Method 2. secure connection to DIRECT API using REST (https and client certificate)
+//config.directAccessMode = 'REST';
+config.directClientKey = './certs/client.key';
+config.directClientCertificate = './certs/client.crt';
+config.directClientRejectUnauthorized = false; //enable self signed server certificates
+
+// direct worker logger
+config.directWorkerLogFile = config.logFolder + 'worker.log';
+config.directWorkerVocLogFile = config.logFolder + 'worker-voc.log';
+config.directWorkerValidationLogFile = config.logFolder + 'worker-validation.log';
+config.directWorkerLogLevel = 'debug';
+config.directWorkerLogCount = 10; //number of rotated files to keep
+config.directWorkerLogPeriod = '1d'; //one of "h"(hours), "d"(days), "w"(weeks), "m"(months), "y"(years)
+config.directDeleteOnSuccess = true; //delete emails from Abelian database on successful processing
+config.directRequestDeliveryNotification = true; //request notification of positive or negative delivery of a Direct message
+config.directSendDeliveryNotification = true; //send a 'Delivered: X' mail message WHEN REQUESTED (i.e. when the received email contains a delivery request notification header)
+config.directSaveMDNMessages = false; //saving MDN as separate emails (true) or skipping them (false)
+config.directDeadLetterQueuePath = config.outputFolder + '/directDeadLetters/';
+
+config.notifications = {};
+config.notifications.apn = {};
+config.notifications.apn.enabled = false;
+config.notifications.apn.certificatePath = './certs/apntest.p12';
+config.notifications.apn.useProductionEnvironment = false; //Values: false (sandbox), true (production); Default: false
+
+// google cloud notification
+config.notifications.gcm = {};
+config.notifications.gcm.enabled = true;
+config.notifications.gcm.apiKey = 'AIzaSyBALB0doeuZ_3b3gfT5RvOFgVSbCIahpUY';
+
+//transcription service (Direct address)
+config.transcriptionServiceDirectAddress = '{{ nxt_api_transcription_service_url }}';
+
+//LRI - lab results incorporation
+config.lriPollInterval = 1; //seconds
+config.lriWorkerLogFile = config.logFolder + 'lriWorker.log';
+config.lriWorkerVocLogFile = config.logFolder + 'lriWorker-voc.log';
+config.lriWorkerValidationLogFile = config.logFolder + 'lriWorker-validation.log';
+config.lriWorkerLogLevel = 'debug';
+config.lriWorkerLogCount = 10; //number of rotated files to keep
+config.lriWorkerLogPeriod = '1d'; //one of "h"(hours), "d"(days), "w"(weeks), "m"(months), "y"(years)
+
+config.lriInputFolder = 'C:/gitrepo/nxt-app/comm/iCamel/target/CamelOut';
+config.lriProcessedFolder = 'C:/test/lri/processed';
+config.lriErrorFolder = 'C:/test/lri/error';
+
+
+//bundle view
+config.bundleViewTemplatesDir = './bundleViewer/templates';
+
+//validation
+config.validation = {};
+config.validation.checkMapping = true; //check for elasticsearch MapperParsingException for resources that do not have a defined json-schema
+config.validation.enabled = true;
+config.validation.enforce = true;
+config.validation.schemaFolder = './json-schema/';
+config.validation.logging = {};
+config.validation.logging.includeDocument = true;
+config.validation.logging.filename = config.logFolder + 'validation.log';
+config.validation.logging.level = 'debug';
+config.validation.logging.logSuccesses = false;
+config.validation.logging.period = '1d'; //one of "h"(hours), "d"(days), "w"(weeks), "m"(months), "y"(years)
+config.validation.logging.count = 10; //number of rotated files to keep
+config.validation.disallowHtmlStrings = false;
+
+//CORS
+config.origins = ['{{ nxt_api_base_url }}'];
+
+//logging (Bunyan)
+config.logging = {};
+//logging.level possible values: fatal, error, warn, info, debug, trace
+config.logging.level = 'debug';
+config.logging.filename = config.logFolder + 'app.log';
+config.logging.logRequests = true;
+config.logging.period = '1d'; //one of "h"(hours), "d"(days), "w"(weeks), "m"(months), "y"(years)
+config.logging.count = 10; //number of rotated files to keep
+
+//audit
+config.audit = {};
+config.audit.enable = true;
+config.audit.sourceSite = 'FHIR Site';
+config.audit.sourceIdentifier = 'FHIR API';
+config.audit.hashing = {};
+config.audit.hashing.enabled = false;
+config.audit.hashing.couchbaseBucket = 'audithash';
+
+//CCDA importer
+config.importCCDA = true; //CCDA import uses the libxmljs node module
+config.cda_xsl_path = './ccda/CDA.xsl';
+config.ccr_xsl_path = './ccda/CCR.xsl';
+config.cdaTransformByDefault = true; //transform cda to html if no ?transform= parameter given to view or download
+config.cdaMimeTypes = ['application/xml', 'text/xml', 'application/hl7-v3+xml'];
+
+{% raw %}
+config.ccdaVitalSignPanels = {
+    panels:  [{
+        code: '35094-2',
+        display: 'Blood pressure panel',
+        system : "http://loinc.org",
+        children : [
+            '8480-6',   //Systolic blood pressure
+            '8462-4'    //Diastolic blood pressure
+        ]
+    }, {
+        code: '55418-8',
+        display: 'Weight and Height tracking panel',
+        system : "http://loinc.org",
+        children : [
+            '29463-7',  //Body Weight
+            '3141-9',   //Body Weight Measured
+            '8302-2',   //Body Height
+            '39156-5'   //Body mass index (BMI)
+        ]
+    }],
+    panelText : "<div> <p><b>Patient</b> {{subject.display}}</p> "+
+                    "<p><b>Issued</b> {{issued}}</p> "+
+                    "<p><b>Observation type</b> {{extension.0.valueCoding.display}}</p> " +
+                    "{{#related_target}}" +
+                        "<p><b>{{name.coding.0.display}}</b> {{valueQuantity.value}} {{valueQuantity.units}}</p>"+
+                    "{{/related_target}}" +
+                " </div>"
+};
+{% endraw %}
+config.ccdaToFhirImporter = {};
+config.ccdaToFhirImporter.allergies = {};
+config.ccdaToFhirImporter.allergies.noKnownValueConcept = { system: 'http://hl7.org/fhir/v3/NullFlavor', code: 'NA', display: 'No known allergies' };
+config.ccdaToFhirImporter.medications = {};
+config.ccdaToFhirImporter.medications.noKnownValueConcept = { system: 'http://hl7.org/fhir/v3/NullFlavor', code: 'NA', display: 'No known medications' };
+config.ccdaToFhirImporter.problems = {};
+config.ccdaToFhirImporter.problems.noKnownValueConcept = { system: 'http://hl7.org/fhir/v3/NullFlavor', code: 'NA', display: 'No known problems' };
+
+
+// FHIR - compartments
+config.compartments = {};
+config.compartments.referenceResolveMaxDepth = 5; //resolve reference max depth: 0 = no references resolved, 1= only direct references in view resources are resolved, etc
+config.compartments.encounter = {};
+config.compartments.encounter.patientDashboard = {};
+config.compartments.encounter.patientDashboard.onlyEncounterData = false; //false = get all relevant patient data; true = get only resources related to the requested encounter; default = false
+
+config.orderConfiguration = {};
+//tolerateTimeTifference - do not sign order if order start date is before current datetime with more than <tolerateTimeTifference> milliseconds
+config.orderConfiguration.tolerateTimeTifference = 60 * 60 * 1000; //milliseconds - 60 minutes
+//EPM
+config.epmEnabled = {{ nxt_api_epm_enabled|lower }};
+config.epmZMQEndpoint = "tcp://devs:5555";
+config.epmReceiveTimeout = 60000; //milliseconds
+
+//FHIR to CCDA templates
+config.fhirToCcdaTemplatesDir = './translators/fhirToCcda/templates';
+config.fhirToCancerCdaTemplatesDir = './translators/fhirToCancerCda/templates';
+config.cancerReportsFolder = config.outputFolder + '/cancerReports';
+
+//v2 messaging
+config.sendingApplication_NamespaceID = 'EHR.NXT';
+config.sendingApplication_UniversalID = '2.16.840.1.113883.3.127.100';
+
+//Immunization v2 messaging Facility ID
+config.immunizationMessagingId = 'X68';
+config.immunizationReceivingFacility_NamespaceID = 'Test Immun Reg';
+
+//LRI v2 messaging Facility ID
+config.LRISendingFacility_NamespaceID = 'NXT Lab Facility';
+config.LRISendingFacility_UniversalID = '2.16.840.1.113883.3.127.101';
+config.LRIReceivingFacility_NamespaceID = 'NIST EHR Facility';
+config.LRIReceivingFacility_UniversalID = '2.16.840.1.113883.3.72.5.23';
+
+config.websocketsEnabled = {{ nxt_api_websockets_enabled|lower }};
+config.cdsRuleEnabled = {{ nxt_api_cdsrule_enabled|lower }};
+
+//CQM
+config.cqm = {};
+config.cqm.enabled = {{ nxt_api_cqm_enabled|lower }};
+config.cqm.basePopHealthUrl = 'http://andreie-pc:3000/';
+config.cqm.cat1folder = config.outputFolder + '/cqm/';
+config.cqm.saveCat1ToDisk = true;
+config.cqm.saveCat3ToDisk = true;
+config.cqm.generatePatientsXml = true;
+config.cqm.mongo = {};
+config.cqm.mongo.url = 'mongodb://andreie-pc:27017/pophealth-development';
+config.cqm.mongo.enabled = {{ nxt_api_mongo_enabled|lower }};
+
+
+{# TODO: vars #}
+//SureScript Eligibility
+config.duns = 0;
+config.companyName = '';
+config.surescripts = {};
+config.surescripts.eligibility = {};
+config.surescripts.eligibility.enabled = true;
+config.surescripts.eligibility.url = '';
+config.surescripts.eligibility.timeout = 32000; //32seconds as recomended by surescripts implementation guide
+config.surescripts.eligibility.refreshReqDays = 3; //in days
+config.surescripts.eligibility.username = '';
+config.surescripts.eligibility.password = '';
+config.surescripts.eligibility.surescriptId = '';
+config.surescripts.eligibility.separator =  {
+    SEGMENT : '~',
+    ELEMENT : '*',
+    COMPONENT : ':',
+    REPETITION : '^'
+};
+
+//SureScripts Providers
+config.surescripts.provider = {};
+config.surescripts.provider.enabled = {{ nxt_api_surescripts_provider_enabled|lower }};
+config.surescripts.provider.url = ''; // For tests
+//config.surescripts.provider.url = ''; // Live use
+config.surescripts.provider.username = '';
+config.surescripts.provider.password = '';
+config.surescripts.provider.accountID = '';
+config.surescripts.provider.portalID = '';
+config.surescripts.provider.dataProviderID = '';
+config.surescripts.provider.versionID = '4.6';
+
+config.surescripts.prescriptionRouting = {};
+config.surescripts.prescriptionRouting.enabled = true;
+config.surescripts.prescriptionRouting.url = 'http://rxstage.medicasoft.us/ss/Medicasoft10.6MU/AuthenticatingXmlServer.aspx';
+config.surescripts.prescriptionRouting.timeout = 30000; //30seconds
+config.surescripts.prescriptionRouting.username = '';
+config.surescripts.prescriptionRouting.password = '';
+
+//SureScript medication history
+config.surescripts.medicationHistory = {};
+config.surescripts.medicationHistory.enabled = false;
+config.surescripts.medicationHistory.testEnabled = true; // set false for production use
+config.surescripts.medicationHistory.url = '';
+config.surescripts.medicationHistory.username = '';
+config.surescripts.medicationHistory.password = '';
+config.surescripts.medicationHistory.authorization = ''; // base64encode(username:password)
+config.surescripts.medicationHistory.surescriptId = '';
+config.surescripts.medicationHistory.senderSoftwareDeveloper = '';
+config.surescripts.medicationHistory.senderSoftwareProduct = 'ehr.NXT';
+config.surescripts.medicationHistory.senderSoftwareVersionRelease = '4.0.1';
+
+// Fitbit
+config.fitbit = {};
+config.fitbit.enableWorker = true;
+config.fitbit.localFolder = './fitbit/';
+config.fitbit.logging = {};
+config.fitbit.logging.level = 'debug';
+config.fitbit.logging.filename = config.logFolder + 'fitbit.log';
+config.fitbit.logging.period = '1m'; //one of "h"(hours), "d"(days), "w"(weeks), "m"(months), "y"(years)
+config.fitbit.logging.count = 10; //number of rotated files to keep
+
+// Chat server
+config.chatServer = {};
+config.chatServer.enable = false;
+config.chatServer.domain = 'devs';
+config.chatServer.xmppPort = 5222;
+config.chatServer.boshPort = 5280;
+
+// PIX server
+config.pixServer = {};
+config.pixServer.enable = true;
+config.pixServer.domain = '127.0.0.1';
+config.pixServer.port = 8085;
+
+// meta fields (generate meta fields on resource update)
+config.metaFieldsGenerator = {};
+config.metaFieldsGenerator.enabled = true;
+
+//Clinical Note
+config.clinicalNotes = {};
+config.clinicalNotes.returnDetailedErrors = false; //default false
+
+//demo
+config.demoTools = {};
+config.demoTools.importFolder = config.outputFolder + '/demoPatients/';
+config.demoTools.exportFolder = config.outputFolder + '/demoPatients_Export/';
+config.demoTools.timezoneShift = -8; //UTC-8 is local timezone for getDate generation; used to return local date part and not UTC date part
+
+config.defaultGeopointSearchDistance = '5km';
+
+config.resourceGenerator = {};
+config.resourceGenerator.maxDays = 90; // generate resources for this number of days in the future
+
+config.inpatientMedicationToDos = {};
+config.inpatientMedicationToDos.generateAt = {};
+config.inpatientMedicationToDos.generateAt.dispense = false; // If false the todos will generate at $sign action.
+config.inpatientMedicationToDos.generateAt.sign = !config.inpatientMedicationToDos.generateAt.dispense;
+
+//reporting
+config.reporting = {};
+config.reporting.jasper = {};
+config.reporting.jasper.baseUrl = '{{ nxt_api_reporting_jasper_baseUrl }}';
+config.reporting.jasper.authorizationType = 'basic';
+config.reporting.jasper.username = '{{ nxt_api_reporting_jasper_username }}';
+config.reporting.jasper.password = '{{ nxt_api_reporting_jasper_password }}';
+
+//pacs server
+config.pacsServerBaseUrl = 'http://devs:8042/dicom-web/instances';
+
+//Zebra printer timeout
+config.getAvailablePrintersTimeout = 2500; //milliseconds
+
+config.googleapis = {};
+config.googleapis.geocode = {};
+config.googleapis.geocode.baseUrl = 'https://maps.googleapis.com/maps/api/geocode/json';
+config.googleapis.geocode.key = '';
+
+config.serverTimeZone = 'Europe/Bucharest';
+module.exports = config;

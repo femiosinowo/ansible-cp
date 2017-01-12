@@ -1,0 +1,34 @@
+nginx_https_enabled: false
+
+# nginx install from source configuration
+
+nginx_install_method: "package"
+nginx_source_version: "1.6.3"
+
+nginx_dir: "/etc/nginx"
+nginx_www_dir: "/usr/local/www"
+nginx_log_dir: "/var/log/nginx"
+nginx_pid: "/var/run/nginx.pid"
+
+nginx_source_url: "http://nginx.org/download/nginx-{{nginx_source_version}}.tar.gz"
+nginx_source_prefix: "/usr/share/nginx"
+nginx_source_conf_path: "{{nginx_dir}}/nginx.conf"
+nginx_source_sbin_path: "/usr/sbin/nginx"
+
+
+nginx_source_default_configure_flags: "--prefix={{nginx_source_prefix}} --conf-path={{nginx_source_conf_path}} --sbin-path={{nginx_source_sbin_path}} --error-log-path={{nginx_log_dir}}/error.log --http-log-path={{nginx_log_dir}}/access.log --http-client-body-temp-path=/var/lib/nginx/tmp/client_body --http-proxy-temp-path=/var/lib/nginx/tmp/proxy --http-fastcgi-temp-path=/var/lib/nginx/tmp/fastcgi --http-uwsgi-temp-path=/var/lib/nginx/tmp/uwsgi --http-scgi-temp-path=/var/lib/nginx/tmp/scgi --pid-path=/run/nginx.pid --lock-path=/run/lock/subsys/nginx --user=nginx --group=nginx --with-ipv6 --with-http_ssl_module --with-http_spdy_module --with-http_realip_module --with-http_addition_module --with-http_sub_module --with-http_dav_module --with-http_flv_module --with-http_mp4_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_random_index_module --with-http_secure_link_module --with-http_degradation_module --with-http_stub_status_module --with-mail --with-mail_ssl_module --with-pcre --with-pcre-jit --with-debug --with-cc-opt='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic'"
+
+nginx_source_modules_included:
+  naxsi_module: "--add-module=/tmp/naxsi-{{nginx_naxsi_version}}/naxsi_src"
+
+
+nginx_source_configure_flags: "{{nginx_source_default_configure_flags}}{% for key, value in nginx_source_modules_included.items() %} {{value}}{% endfor %}"
+
+
+
+# naxsi_module configuration
+
+nginx_naxsi_version: "0.54"
+nginx_naxsi_url: "https://github.com/nbs-system/naxsi/archive/{{nginx_naxsi_version}}.tar.gz"
+
+nginx_package_key_url: http://nginx.org/keys/nginx_signing.key

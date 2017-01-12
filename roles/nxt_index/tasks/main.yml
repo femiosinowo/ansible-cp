@@ -1,0 +1,112 @@
+---
+
+- name: Set index_mapping_path
+  set_fact:
+    index_mapping_path: "../../../../{{ target_source }}-dist-app/database/elastic-search/mapping/ehr"
+  when: "{{ target_source == 'nxt' }}"
+- set_fact:
+    index_mapping_path: "../../../../{{ target_source }}-dist-app/database/elastic-search/mapping"
+  when: "{{ target_source == 'phim' }}"
+
+- file: dest=/tmp/temp_json state=directory
+  delegate_to: 127.0.0.1
+
+- name: Copy index mapping files
+  copy: src="{{ index_mapping_path }}/{{ item }}" dest=/tmp/temp_json/{{ item }}
+  with_items:
+    - fhir_index_mapping.json
+    - voc_index_mapping.json
+    - audit_index_mapping.json
+  delegate_to: 127.0.0.1
+- copy: src="../../../files/{{ item }}" dest="/tmp/temp_json/"
+  with_items:
+    - create_index_aliases.json
+    - generate_extension_map.json
+  delegate_to: 127.0.0.1
+
+- name: Set replicas and shards values
+  replace: "dest=/tmp/temp_json/fhir_index_mapping.json regexp='(\"index.number_of_replicas\") : \"\\d+\",'   replace='\\1 : \"{{fhir_index_number_of_replicas}}\",'"
+  delegate_to: 127.0.0.1
+- replace: "dest=/tmp/temp_json/fhir_index_mapping.json regexp='(\"index.number_of_shards\") : \"\\d+\",'   replace='\\1 : \"{{fhir_index_number_of_shards}}\",'"
+  delegate_to: 127.0.0.1
+- replace: "dest=/tmp/temp_json/audit_index_mapping.json regexp='(\"index.number_of_replicas\") : \"\\d+\",'   replace='\\1 : \"{{audit_index_number_of_replicas}}\",'"
+  delegate_to: 127.0.0.1
+- replace: "dest=/tmp/temp_json/audit_index_mapping.json regexp='(\"index.number_of_shards\") : \"\\d+\",'   replace='\\1 : \"{{audit_index_number_of_shards}}\",'"
+  delegate_to: 127.0.0.1
+- replace: "dest=/tmp/temp_json/voc_index_mapping.json regexp='(\"index.number_of_replicas\") : \"\\d+\",'   replace='\\1 : \"{{voc_index_number_of_replicas}}\",'"
+  delegate_to: 127.0.0.1
+- replace: "dest=/tmp/temp_json/voc_index_mapping.json regexp='(\"index.number_of_shards\") : \"\\d+\",'   replace='\\1 : \"{{voc_index_number_of_shards}}\",'"
+  delegate_to: 127.0.0.1
+
+- name: Wait for ES nodes
+  wait_for: port=9200 delay=7
+
+- name: Create fhir index
+  uri:
+    url: http://localhost:9200/fhir_v1
+    method: PUT
+    body: "{{ lookup('file', '/tmp/temp_json/fhir_index_mapping.json') }}"
+    status_code: 200
+    body_format: json
+  args:
+    creates: "{{ elasticsearch_data_dir }}/{{ elasticsearch_cluster_name }}/nodes/0/indices/fhir_v1"
+
+- name: Create audit index
+  uri:
+    url: http://localhost:9200/audit_v1
+    method: PUT
+    body: "{{ lookup('template', '/tmp/temp_json/audit_index_mapping.json') }}"
+    status_code: 200
+    body_format: json
+  args:
+    creates: "{{ elasticsearch_data_dir }}/{{ elasticsearch_cluster_name }}/nodes/0/indices/audit_v1"
+
+- name: Create voc index
+  uri:
+    url: http://localhost:9200/voc_v1
+    method: PUT
+    body: "{{ lookup('file', '/tmp/temp_json/voc_index_mapping.json') }}"
+    status_code: 200
+    body_format: json
+  args:
+    creates: "{{ elasticsearch_data_dir }}/{{ elasticsearch_cluster_name }}/nodes/0/indices/voc_v1"
+
+- name: Create index aliases
+  uri:
+    url: http://localhost:9200/_aliases
+    method: POST
+    body: "{{ lookup('file', '/tmp/temp_json/create_index_aliases.json') }}"
+    status_code: 200
+    body_format: json
+
+- name: Generate extension mappings
+  uri:
+    url: http://localhost:9200/fhir/couchbaseDocument/test
+    method: POST
+    body: "{{ lookup('file', '/tmp/temp_json/generate_extension_map.json') }}"
+    status_code: 200,201
+    body_format: json
+
+- name: Delete document
+  uri:
+    url: http://localhost:9200/fhir/couchbaseDocument/test
+    method: DELETE
+    status_code: 200
+
+- name: Create replication to ES
+  shell: "{{ couchbase_server_home_path }}/bin/couchbase-cli xdcr-setup -c {{ couchbase_server_primary_node }}:{{ couchbase_server_admin_port }} --user={{ couchbase_server_admin }} --password={{ couchbase_server_password }} --create --xdcr-cluster-name=elastic --xdcr-hostname={{ couchbase_server_primary_node }}:{{ elasticsearch_couchbase_transport_port }} --xdcr-username={{ elasticsearch_couchbase_username }} --xdcr-password={{ elasticsearch_couchbase_password }}"
+  args:
+    creates: "{{ couchbase_server_home_path }}/already_ran"
+- shell: "{{ couchbase_server_home_path }}/bin/couchbase-cli xdcr-replicate -c {{ couchbase_server_primary_node }}:{{ couchbase_server_admin_port }} --user={{ couchbase_server_admin }} --password={{ couchbase_server_password }} --xdcr-cluster-name=elastic --xdcr-from-bucket=fhir --xdcr-to-bucket=fhir_v1 --xdcr-replication-mode=capi"
+  args:
+    creates: "{{ couchbase_server_home_path }}/already_ran"
+- shell: "{{ couchbase_server_home_path }}/bin/couchbase-cli xdcr-replicate -c {{ couchbase_server_primary_node }}:{{ couchbase_server_admin_port }} --user={{ couchbase_server_admin }} --password={{ couchbase_server_password }} --xdcr-cluster-name=elastic --xdcr-from-bucket=audit --xdcr-to-bucket=audit_v1 --xdcr-replication-mode=capi"
+  args:
+    creates: "{{ couchbase_server_home_path }}/already_ran"
+
+- file: path="{{ couchbase_server_home_path }}/already_ran" state=touch
+
+- name: Remove temp dir
+  file: path="/tmp/temp_json" state=absent
+  become: yes
+  delegate_to: 127.0.0.1

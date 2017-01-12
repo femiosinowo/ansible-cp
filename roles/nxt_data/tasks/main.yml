@@ -1,0 +1,88 @@
+---
+
+- name: Create new buckets
+  shell: "{{ couchbase_server_home_path }}/bin/couchbase-cli bucket-create -c {{ couchbase_server_primary_node }}:{{ couchbase_server_admin_port }} --user={{ couchbase_server_admin }} --password={{ couchbase_server_password }} --bucket={{ item.key }} --bucket-type={{ item.value.type }} --bucket-ramsize={{ item.value.ramsize }} --bucket-replica={{ item.value.replica }}"
+  args:
+    creates: "{{ couchbase_server_data_path }}/{{ item.key }}"
+  with_dict: "{{ buckets }}"
+
+#"{{ lookup('file', '{{ item }}' }}"
+#- name: Create users view
+#  shell: "curl -XPUT -vvv -H \"Content-Type: application/json\" -b cookies -c cookies --url {{ couchbase_server_primary_node }}:{{ couchbase_server_admin_port }}/couchBase/fhir/_design/users -d@'../files/users_view.json'"
+#  delegate_to: 127.0.0.1
+#  tags:
+#    - test2
+#  ignore_errors: yes
+
+- name: Wait for bucket creation
+  pause: seconds=15
+
+#- name: Configure pg_hba.conf
+#  template:
+#        src: templates/pg_hba.conf.j2
+#        dest: "/var/lib/pgsql/data/pg_hba.conf"
+#        owner: "{{ postgresql_admin_user }}"
+#        group: "{{ postgresql_admin_user }}"
+#        mode: 0640
+
+- name: Create NXT_Binary user
+  postgresql_user: name={{ binary_db_user }} state=present password={{ binary_db_password }} role_attr_flags=NOSUPERUSER,NOCREATEDB,NOCREATEROLE
+  become: true
+  become_user: "{{ postgresql_admin_user }}"
+
+- name: Create database NXT_BINARY
+  postgresql_db: name=NXT_BINARY state=present owner={{ binary_db_user }}
+  become: true
+  become_user: "{{postgresql_admin_user}}"
+
+- copy: src=nxt_binary.sql dest=/tmp/nxt_binary.sql
+  become: true
+  become_user: "{{postgresql_admin_user}}"
+
+- name: Create NXT_BINARY tables
+  command: psql -d NXT_BINARY -f /tmp/nxt_binary.sql
+  become: true
+  become_user: "{{postgresql_admin_user}}"
+
+- name: Set privileges for NXT_BINARY tables
+  postgresql_privs: >
+    db=NXT_BINARY
+    privs=ALL
+    type=table
+    objs=doc
+    role={{ binary_db_user }}
+
+- name: Create NXT_AUDIT user
+  postgresql_user: name={{ audit_db_user }} state=present password={{ audit_db_password }} role_attr_flags=NOSUPERUSER,NOCREATEDB,NOCREATEROLE
+  become: true
+  become_user: "{{ postgresql_admin_user }}"
+
+- name: Create database NXT_AUDIT
+  postgresql_db: name=NXT_AUDIT state=present owner={{ audit_db_user }}
+  become: true
+  become_user: "{{postgresql_admin_user}}"
+
+- copy: src=nxt_audit.sql dest=/tmp/nxt_audit.sql
+  become: true
+  become_user: "{{postgresql_admin_user}}"
+
+- name: Create NXT_AUDIT tables and functions
+  command: psql -d NXT_AUDIT -f /tmp/nxt_audit.sql
+  become: true
+  become_user: "{{postgresql_admin_user}}"
+
+- name: Set privileges for NXT_AUDIT tables
+  postgresql_privs: >
+    db=NXT_AUDIT
+    privs=ALL
+    type=table
+    objs=doc
+    role={{ audit_db_user }}
+
+- name: Set privileges for NXT_AUDIT functions
+  postgresql_privs: >
+    db=NXT_AUDIT
+    privs=ALL
+    type=function
+    obj=upsert_doc(uuid:"varchar":"varchar")
+    role={{ audit_db_user }}

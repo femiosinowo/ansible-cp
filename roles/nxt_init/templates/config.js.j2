@@ -1,0 +1,134 @@
+﻿"use strict";
+var config = {};
+
+config.couchbaseUrl = '{{ groups['dbmaster'][0] }}:8091';
+config.couchbaseBucket = 'fhir';
+config.couchbaseAuditBucket = 'audit';
+config.couchbaseInitTimeout = 20000; //20s timeout on initiating connection
+config.couchbaseRequestTimeout = 25000; //2.5s timeout on operation request (default couchbase value)
+
+config.elasticUrl = '{{ groups['dbmaster'][0] }}:9200';
+config.elasticRequestTimeout = 20000;
+
+config.encryption = {};
+config.encryption.enabled = true;
+config.encryption.source = {};
+config.encryption.source.couchbaseUrl = 'vmsrv:8091';
+config.encryption.source.binaryConnectionString = 'postgres://nxtbinary:nxtbinary@172.31.29.231/NXT_BINARY';
+config.encryption.source.couchbaseBucket = 'fhir';
+config.encryption.destination = {};
+config.encryption.destination.couchbaseUrl = 'localhost:8091';
+config.encryption.destination.binaryConnectionString = 'postgres://nxtbinary:nxtbinary@172.31.29.231/NXT_BINARY2';
+config.encryption.destination.couchbaseBucket = 'fhir_encrypted';
+
+config.schemaFolder = '../../nxt/json-schema/';
+config.bulkSize = 500;
+config.fhirIdx = 'fhir';
+config.vocIdx = 'voc';
+
+//data access layer
+config.dal = {};
+config.dal.encryption = {};
+config.dal.encryption.enabled = false;
+config.dal.encryption.provider = 'nodejs'; // 'nodejs', 'safenet'
+config.dal.encryption.providers = {};
+config.dal.encryption.providers.nodejs = {};
+config.dal.encryption.providers.nodejs.password = 'test'; // encryption key string
+config.dal.encryption.providers.nodejs.algorithm = 'aes-256-cbc';
+config.dal.encryption.providers.safenet = {};
+config.dal.encryption.providers.safenet.threadCount = 64;
+if (config.dal.encryption.enabled === true && config.dal.encryption.provider === 'safenet')
+    process.env.UV_THREADPOOL_SIZE = config.dal.encryption.providers.safenet.threadCount;
+config.dal.encryption.providers.safenet.libPath = 'C:\\Program Files\\SafeNet\\LunaClient\\cryptoki.dll'; // SafeNet cryptoki library file path (windows)
+// config.dal.encryption.providers.safenet.libPath = '/usr/safenet/lunaclient/lib/libCryptoki2_64.so'; // SafeNet cryptoki library file path (linux)
+config.dal.encryption.providers.safenet.slotLabel = '';  // slot label, (high availability virtual slot or HSM physical slot)
+config.dal.encryption.providers.safenet.keyLabel = ''; // label to identify the encryption key located on the HSM devices
+config.dal.encryption.providers.safenet.debug = false; // allow hsmcrypto module to print debug info to stdout
+config.dal.encryption.providers.safenet.password = ''; // hsm partition password
+
+config.dal.storage = {};
+config.dal.storage.fhir = {};
+config.dal.storage.fhir.enabled = true;
+config.dal.storage.fhir.type = 'couchbase';
+config.dal.storage.fhir.host = ['{{ groups['dbmaster'][0] }}:8091'];
+config.dal.storage.fhir.bucket = 'fhir';
+config.dal.storage.fhir.operationTimeout = 25000;
+config.dal.storage.fhir.connectionTimeout = 20000;
+config.dal.storage.fhir.encryption = false;
+config.dal.storage.fhir.indexing = false;
+
+// config.dal.storage.sessions = {};
+// config.dal.storage.sessions.enabled = true;
+// config.dal.storage.sessions.type = 'couchbase';
+// config.dal.storage.sessions.host = ['vmsrv:8091'];
+// config.dal.storage.sessions.bucket = 'sessions';
+// config.dal.storage.sessions.operationTimeout = 25000;
+// config.dal.storage.sessions.connectionTimeout = 20000;
+// config.dal.storage.sessions.encryption = false;
+// config.dal.storage.sessions.indexing = false;
+
+// config.dal.storage.operations = {};
+// config.dal.storage.operations.enabled = true;
+// config.dal.storage.operations.type = 'couchbase';
+// config.dal.storage.operations.host = ['vmsrv:8091'];
+// config.dal.storage.operations.bucket = 'operations';
+// config.dal.storage.operations.operationTimeout = 25000;
+// config.dal.storage.operations.connectionTimeout = 20000;
+// config.dal.storage.operations.encryption = false;
+// config.dal.storage.operations.indexing = false;
+
+// config.dal.storage.audit = {};
+
+// // config.dal.storage.audit.type = 'couchbase';
+// // config.dal.storage.audit.enabled = true;
+// // config.dal.storage.audit.host = ['vmsrv:8091'];
+// // config.dal.storage.audit.index = 'audit';
+// // config.dal.storage.audit.indexing = false;
+// // config.dal.storage.audit.bucket = 'audit';
+// // config.dal.storage.audit.encryption = false;
+// // config.dal.storage.audit.operationTimeout = 25000;
+// // config.dal.storage.audit.connectionTimeout = 20000;
+
+// config.dal.storage.audit.type = 'postgresql';
+// config.dal.storage.audit.enabled = true;
+// config.dal.storage.audit.connectionString = 'postgres://administrator:.Logimax.@testaresoft2/NXT_AUDIT';
+// config.dal.storage.audit.encryption = false;
+// config.dal.storage.audit.index = 'audit';
+// config.dal.storage.audit.indexing = true;
+
+// config.dal.storage.audithash = {};
+// config.dal.storage.audithash.type = 'couchbase';
+// config.dal.storage.audithash.enabled = false;
+// config.dal.storage.audithash.host = ['vmsrv:8091'];
+// config.dal.storage.audithash.indexing = false;
+// config.dal.storage.audithash.bucket = 'audithash';
+// config.dal.storage.audithash.encryption = false;
+// config.dal.storage.audithash.operationTimeout = 25000;
+// config.dal.storage.audithash.connectionTimeout = 20000;
+
+config.dal.index = {};
+config.dal.index.apiVersion = '1.5';
+config.dal.index.host = ['{{ groups['dbmaster'][0] }}:9200'];
+config.dal.index.requestTimeout = 200000;
+
+config.removableResources = [
+    'List',
+    'ValueSet',
+    'Observation',
+    'DiagnosticReport',
+    'WorkList',
+    'ConceptMap',
+    'Practitioner',
+	'AllergyIntolerance',
+	'Substance',
+	'Medication',
+	'SecurityEvent',
+    'Device',
+    'DeviceTestConfiguration',
+    'UserName',
+    'InventoryItem',
+    'InventoryDocument',
+    'InventoryStock'
+];
+
+module.exports = config;

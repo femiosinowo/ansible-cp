@@ -1,0 +1,2 @@
+- include: modules/naxsi_module.yml
+  when: nginx_source_modules_included.naxsi_module is defined

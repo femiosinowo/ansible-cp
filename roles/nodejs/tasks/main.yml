@@ -1,0 +1,26 @@
+---
+
+- name: Install nodesource repo
+  shell: curl --silent --location {{ nodejs_installation_script_url }} | bash -
+  become: true
+  args:
+    creates: /usr/bin/npm
+
+- name: Install tools
+  yum: name={{ item }} state=present
+  with_items:
+    - git
+    - gcc-c++
+
+- name: Install nodejs
+  yum: name={{ item }} state=present disablerepo=* enablerepo=nodesource
+  sudo: true
+  with_items:
+    - nodejs
+
+- name: Make share dir
+  file: path=/share state=directory
+
+- name: Install node.js module forever as global
+  npm: name=forever global=yes
+  when: ansible_os_family == "Debian" or (ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '<') }})

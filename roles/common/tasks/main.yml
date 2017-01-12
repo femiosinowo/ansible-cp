@@ -1,0 +1,39 @@
+---
+
+- name: Install common packages
+  yum: name={{item}} state=present
+  with_items:
+    - unzip
+    - rsync
+
+- name: Install libselinux-python
+  yum: name=libselinux-python state=present
+  when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
+
+#- name: Bootstrap epel-release install
+#  copy: src=bootstrap-epel-release.repo dest=/etc/yum.repos.d/ owner=root group=root mode=0644
+
+#- name: Install epel-release
+#  yum: name="epel-release" enablerepo=bootstrap-epel-release state=present
+
+- name: Install epel-release
+  yum: name=http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm state=present
+#  command: rpm -ivh http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+
+#- name: Enable epel repository
+#  ini_file: dest=/etc/yum.repos.d/epel.repo section=epel option=enabled value=1
+
+- name: Remove require tty
+  lineinfile: regexp=".*Defaults.*requiretty" line="# Defaults requiretty" dest=/etc/sudoers state=present
+
+#- name: Install nginx repo
+#  command: rpm -ivh http://nginx.org/packages/centos/6/noarch/RPMS/nginx-release-centos-6-0.el6.ngx.noarch.rpm
+#  when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
+
+#- name: Install NGINX
+#  yum: name=nginx state=present enablerepo=nginx
+#  when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
+
+#- name: Install NGINX
+#  yum: name=nginx state=present
+#  when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '>=') }}

@@ -1,0 +1,7 @@
+- name: Nginx | Modules | Download the naxsi_module source
+  get_url:
+    url: "{{nginx_naxsi_url}}"
+    dest: "/tmp/nginx-naxsi-module.tar.gz"
+
+- name: Nginx | Modules | Unpack the naxsi_module source
+  command: tar -xvzf /tmp/nginx-naxsi-module.tar.gz chdir=/tmp creates=/tmp/naxsi-{{nginx_naxsi_version}}

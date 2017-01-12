@@ -1,0 +1,70 @@
+---
+
+- name: CLAMAV | Install all required
+  yum: name={{ item }} state=present
+  with_items:
+    - clamav-server
+    - clamav-data
+    - clamav-update
+    - clamav-filesystem
+    - clamav
+    - clamav-scanner-systemd
+    - clamav-devel
+    - clamav-lib
+    - clamav-server-systemd
+
+- name: CLAMAV | Setsebool
+  command: setsebool -P antivirus_can_scan_system 1
+
+- name: CLAMAV | Backup freshclam config
+  command: cp /etc/freshclam.conf /etc/freshclam.conf.bak
+
+- name: CLAMAV | Configure freshclam
+  lineinfile: dest=/etc/freshclam.conf regexp="^Example$" state=absent
+
+- name: CLAMAV | update virus definitions
+  command:  freshclam
+  become: true
+
+- name: CLAMAV | Create service
+  become: true
+  template:
+    src: clam-freshclam.service.j2
+    dest: /usr/lib/systemd/system/clam-freshclam.service
+    owner: root
+    group: root
+    mode: 0755
+
+- name: CLAMAV | Configure clamd
+  command: cp /usr/share/clamav/template/clamd.conf /etc/clamd.d/clamd.conf
+- lineinfile: dest=/etc/clamd.d/clamd.conf regexp="^Example$" state=absent
+- lineinfile: dest=/etc/clamd.d/clamd.conf regexp="^User\s.*" line="User clamscan" state=present
+- lineinfile: dest=/etc/clamd.d/clamd.conf regexp=".*LocalSocket\s.*\/.*" line="LocalSocket /var/run/clamd.scan/clamd.sock" state=present
+- lineinfile: dest=/etc/clamd.d/clamd.conf regexp=".*TCPSocket\s.*" line="TCPSocket 3310" state=present
+
+- name: CLAMAV | setup clamd service
+  command: "mv /usr/lib/systemd/system/clamd@.service /usr/lib/systemd/system/clamd.service"
+  become: true
+  args:
+    creates: "/usr/lib/systemd/system/clamd.service"
+
+- name: CLAMAV | Create service
+  template:
+    src: clamd.service.j2
+    dest: /usr/lib/systemd/system/clamd.service
+    owner: root
+    group: root
+    mode: 0755
+
+- name: CLAMAV | Update the symbolic link to the clamav install
+  file:
+    path: /etc/clamd.conf
+    src: /etc/clamd.d/clamd.conf
+    state: link
+    force: yes
+
+- name: CLAMAV | Enable service
+  service: name=clamd enabled=yes
+
+- name: CLAMAV | Start service
+  service: name=clamd state=restarted

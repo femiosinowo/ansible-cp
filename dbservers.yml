@@ -1,0 +1,7 @@
+- name: Initialize database (index)
+  hosts: dbmaster
+  become: true
+  vars:
+    couchbase_server_primary_node: "{{groups['dbmaster'][0]}}"
+  roles:
+    - nxt_index

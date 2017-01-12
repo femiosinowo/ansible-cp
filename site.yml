@@ -1,0 +1,20 @@
+---
+
+- include: ansible.yml tags=always
+
+- name: Apply common configuration
+  hosts: all
+  become: true
+  roles:
+    - common
+  tags:
+    - base
+
+# - include: update_ip.yml tags=update_ip
+
+- include: dbservers_base.yml tags=base
+- include: dbservers.yml tags=app
+- include: appservers_base.yml tags=base
+- include: appservers.yml tags=app
+- include: webservers_base.yml tags=base
+- include: webservers.yml tags=app

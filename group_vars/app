@@ -1,0 +1,89 @@
+# NXT API variables
+nxt_ui_base_url: http://192.168.254.32/#!/
+nxt_api_base_url: http://192.168.254.32
+nxt_api_port: 8008
+nxt_api_user: nxtapi
+nxt_api_home_path: /opt/nxt
+nxt_api_base_path: /opt
+nxt_api_log_path: /var/log/nxt/
+
+nxt_api_email_notifier_enabled: true
+nxt_api_email_notifier_sender: no-reply@mail.com
+nxt_api_email_notifier_host: host
+nxt_api_email_notifier_port: 25
+nxt_api_email_notifier_user: user
+nxt_api_email_notifier_password: pass
+
+nxt_api_measures_enabled: false
+
+nxt_api_cds_enabled: false
+nxt_api_cds_url: http://192.168.254.32/cds-service
+nxt_api_cds_ddi_db: test
+
+nxt_api_direct_access_mode: REST
+nxt_api_direct_message_url: http://192.168.254.32:8085/direct/Message
+nxt_api_direct_mail_domain: direct.test.medicasoft.us
+nxt_api_transcription_service_url: transcription@direct.test.medicasoft.us
+
+nxt_api_google_clientID: google_id
+nxt_api_google_clientSecret: google_secret
+nxt_api_google_callback: callback_url
+
+nxt_api_fitbit_clientID: fitibit_id
+nxt_api_fitbit_clientSecret: fitbit_secret
+nxt_api_fitbit_callback: fitbit_callback
+
+nxt_api_withings_clientID: withings_id
+nxt_api_withings_clientSecret: withings_secret
+nxt_api_withings_callback: withings_callback
+
+nxt_api_dal_encryption_provider: nodejs
+nxt_api_dal_encryption_providers_nodejs_password: test
+
+nxt_api_max_failed_login_attempts: 3
+nxt_api_check_authorization: true
+nxt_api_max_admin_sessions: 3
+nxt_api_max_sessions: 2
+
+nxt_api_infobutton_username: user
+nxt_api_infobutton_password: pass
+
+nxt_api_epm_enabled: false
+nxt_api_epm_wsdl: http://int.services.des.usps.com/des/services/epmWebService-v1?wsdl
+nxt_api_epm_userTokenUsername: user
+nxt_api_epm_userTokenPassword: pass
+nxt_api_epm_keyEncryptAlias: alias
+nxt_api_epm_keySignAlias: alias
+nxt_api_epm_keySignPassword: pass
+
+nxt_api_dal_enabled: false
+nxt_api_dal_encryption_enabled: false
+nxt_api_dal_encryption_password: password
+nxt_api_dal_encryption_type: sw
+nxt_api_dal_encryption_hw_libPath: /usr/safenet/lunaclient/lib
+
+nxt_api_patient_operations_enabled: false
+
+nxt_api_outputfolder: ./output
+
+nxt_api_websockets_enabled: true
+nxt_api_cdsrule_enabled: true
+nxt_api_polling_enabled: true
+nxt_api_cqm_enabled: false
+nxt_api_mongo_enabled: false
+
+nxt_api_storage_audit_type: postgresql
+
+nxt_api_surescripts_provider_enabled: false
+
+nxt_api_reporting_jasper_baseUrl: http://devs:8082/jasperserver/
+nxt_api_reporting_jasper_username: jasperadmin
+nxt_api_reporting_jasper_password: jasperadmin
+
+nxt_api_antivirus_enabled: false
+
+# https://nodejs.org/en/download/package-manager/#enterprise-linux-and-fedora
+# Node.js version 4.x LTS
+nodejs_installation_script_url: https://rpm.nodesource.com/setup_4.x
+# Node.js version 0.10.x
+# nodejs_installation_script_url: https://rpm.nodesource.com/setup

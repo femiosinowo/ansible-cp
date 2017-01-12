@@ -1,0 +1,73 @@
+---
+
+- name: Create API user
+  user: name={{ nxt_api_user }}
+
+#TODO use rsync
+- name: Create tools directories
+  file: dest={{ item }} state=directory owner={{ nxt_api_user }} group={{ nxt_api_user }}
+  with_items:
+    - "{{ nxt_api_base_path }}/tools"
+    - "{{ nxt_api_base_path }}/database"
+
+- name: Copy tools
+  synchronize: src=../../../../{{ target_source }}-dist-app/tools/ dest={{ nxt_api_base_path }}/tools/
+
+#  copy: src=../../../../{{ target_source }}-dist-app/tools dest={{ nxt_api_base_path }} owner={{ nxt_api_user }} group={{ nxt_api_user }}
+
+#TODO use rsync
+- name: Copy database init files
+#  copy: src=../../../../{{ target_source }}-dist-app/database dest={{ nxt_api_base_path }} owner={{ nxt_api_user }} group={{ nxt_api_user }}
+  synchronize: src=../../../../{{ target_source }}-dist-app/database/ dest={{ nxt_api_base_path }}/database/
+
+- name: Unzip medications
+  unarchive: src={{ nxt_api_base_path }}/database/couchbase/data/Medication/medications.zip dest={{ nxt_api_base_path }}/database/couchbase/data/Medication/ copy=no
+
+- name: Delete medications zip
+  file: path={{ nxt_api_base_path }}/database/couchbase/data/Medication/medications.zip state=absent
+
+- name: Unzip diseaseDetails
+  unarchive: src={{ nxt_api_base_path }}/database/elastic-search/data/Concept/diseaseDetails.zip dest={{ nxt_api_base_path }}/database/elastic-search/data/Concept/ copy=no
+
+- name: Delete diseaseDetails zip
+  file: path={{ nxt_api_base_path }}/database/elastic-search/data/Concept/diseaseDetails.zip state=absent
+
+- name: Unzip laboratoryTestDetails
+  unarchive: src={{ nxt_api_base_path }}/database/elastic-search/data/Concept/laboratoryTestDetails.zip dest={{ nxt_api_base_path }}/database/elastic-search/data/Concept/ copy=no
+
+- name: Delete laboratoryTestDetails zip
+  file: path={{ nxt_api_base_path }}/database/elastic-search/data/Concept/laboratoryTestDetails.zip state=absent
+
+- name: Copy BulkOperations modules
+  unarchive: src=../{{ target_source }}-dist-app/modules/node_modules_tools.tgz dest={{ nxt_api_base_path }}/tools/BulkOperations/
+
+- name: NPM rebuild
+  command: npm rebuild
+  args:
+    chdir: "{{ nxt_api_base_path }}/tools/BulkOperations"
+  become: true
+
+# - name: Change tools directory owner
+#   file: dest="{{ nxt_api_base_path }}/tools" state=directory
+#         owner={{ nxt_api_user }} group={{ nxt_api_user }}
+#         recurse=yes
+#   become: true
+
+# - name: Change database directory owner
+#   file: dest="{{ nxt_api_base_path }}/database" state=directory
+#         owner={{ nxt_api_user }} group={{ nxt_api_user }}
+#         recurse=yes
+#   become: true
+
+# - name: Install Node.js packages for BulkOperations tool
+#   npm: path={{ nxt_api_base_path }}/tools/BulkOperations
+#   become: true
+#   become_user: "{{ nxt_api_user }}"
+  
+- name: Configure BulkOperations tool
+  template:
+    src: config.js.j2
+    dest: "{{ nxt_api_base_path }}/tools/BulkOperations/config.js"
+    # owner: "{{ nxt_api_user }}"
+    # group: "{{ nxt_api_user }}"
+    mode: 0644

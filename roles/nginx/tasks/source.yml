@@ -1,0 +1,76 @@
+---
+- name: Install nginx
+  yum: name=nginx state=present
+
+- name: Nginx | Make sure the Nginx build dependencies are installed
+  yum: name={{item}} state=present
+  with_items:
+    - pcre
+    - pcre-devel
+    - make
+    - gcc
+    - gcc-c++
+    - glibc
+    - glibc-devel
+    - glibc-headers
+    - openssl
+    - openssl-devel
+
+- name: Nginx | Download the Nginx source release if not yet present
+  get_url:
+    url: "{{nginx_source_url}}"
+    dest: "/tmp/nginx-{{nginx_source_version}}.tar.gz"
+
+- include: "modules.yml"
+
+- name: Nginx | Unpack the compressed Nginx source
+  command: tar -xvzf /tmp/nginx-{{nginx_source_version}}.tar.gz
+           chdir=/tmp creates=/tmp/nginx-{{nginx_source_version}}/README
+
+# - name: Nginx | Make sure the nginx directory exists
+#   file:
+#     path: "{{nginx_dir}}"
+#     owner: root
+#     group: root
+#     mode: 0755
+#     state: directory
+
+# - name: Nginx | Make sure the nginx log directory exists
+#   file:
+#     path: "{{nginx_log_dir}}"
+#     owner: root
+#     group: root
+#     mode: 0755
+#     state: directory
+
+# - name: Nginx | Make sure the sites-available, sites-enabled and conf.d directories exist
+#   file:
+#     path: "{{nginx_dir}}/{{item}}"
+#     owner: root
+#     group: root
+#     mode: 0755
+#     state: directory
+#   with_items: ["sites-available", "sites-enabled", "conf.d"]
+
+- name: Nginx | Write out the version and flags used for the build
+  template:
+    src: compilation_flags.j2
+    dest: "{{nginx_dir}}/.nginx_compilation_flags"
+  register: nginx_flags
+
+- name: Nginx | Compile the Nginx source
+  shell: >
+    cd /tmp/nginx-{{nginx_source_version}} &&
+    ./configure {{nginx_source_configure_flags}} &&
+    make &&
+    make install
+  become: true
+#  when: nginx_flags.changed
+
+# - name: Nginx | Install the upstart init script
+#   template:
+#     src: init.j2
+#     dest: /etc/init.d/nginx
+#     owner: root
+#     group: root
+#     mode: 0755

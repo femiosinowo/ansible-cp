@@ -1,0 +1,118 @@
+---
+
+- name: Import public signing key
+  rpm_key: state=present key=http://packages.elasticsearch.org/GPG-KEY-elasticsearch
+
+- name: Install elasticsearch
+  yum: name={{ elasticsearch_download_url }} state=present
+
+- name: Configuring user and group
+  group: name={{ elasticsearch_group }}
+- user: name={{ elasticsearch_user }} group={{ elasticsearch_group }} createhome=no
+
+- name: Create elasticsearch data directories
+  file: path={{ elasticsearch_log_dir }} state=directory owner={{ elasticsearch_user }} group={{ elasticsearch_group }} recurse=yes
+  when: elasticsearch_log_dir is defined
+- file: path={{ elasticsearch_data_dir }} state=directory owner={{ elasticsearch_user }} group={{ elasticsearch_group }} recurse=yes
+  when: elasticsearch_data_dir is defined
+- file: path={{ elasticsearch_work_dir }} state=directory owner={{ elasticsearch_user }} group={{ elasticsearch_group }} recurse=yes
+  when: elasticsearch_work_dir is defined
+
+- name: Configure ES_HEAP_SIZE
+  shell: "echo Configuring open file limits"
+- lineinfile:
+    dest=/etc/sysconfig/elasticsearch
+    regexp="^ES_HEAP_SIZE={{ elasticsearch_heap_size }}g"
+    insertafter=EOF
+    line="ES_HEAP_SIZE={{ elasticsearch_heap_size }}g"
+  when: elasticsearch_heap_size is defined
+
+- name: Configure open file limits
+  shell: "echo Configuring open file limits"
+- lineinfile:
+    dest=/etc/security/limits.conf
+    regexp="^{{ elasticsearch_user }}     -    nofile    {{ elasticsearch_max_open_files }}"
+    insertafter=EOF
+    line="{{ elasticsearch_user }}     -    nofile    {{ elasticsearch_max_open_files }}"
+  when: elasticsearch_max_open_files is defined
+- lineinfile:
+    dest=/etc/security/limits.conf
+    regexp="^{{ elasticsearch_user }}     -    memlock   {{ elasticsearch_max_locked_memory }}"
+    insertafter=EOF
+    line="{{ elasticsearch_user }}     -    memlock   {{ elasticsearch_max_locked_memory }}"
+  when: elasticsearch_max_locked_memory is defined
+- lineinfile:
+    dest=/etc/pam.d/su
+    regexp="^session    required   pam_limits.so"
+    insertafter=EOF
+    line="session    required   pam_limits.so"
+#- lineinfile:
+#    dest=/etc/pam.d/common-session
+#    regexp="^session    required   pam_limits.so"
+#    insertafter=EOF
+#    line="session    required   pam_limits.so"
+#- lineinfile:
+#    dest=/etc/pam.d/common-session-noninteractive
+#    regexp="^session    required   pam_limits.so"
+#    insertafter=EOF
+#    line="session    required   pam_limits.so"
+#- lineinfile:
+#    dest=/etc/pam.d/sudo
+#    regexp="^session    required   pam_limits.so"
+#    insertafter=EOF
+#    line="session    required   pam_limits.so"
+- lineinfile:
+    dest=/etc/init.d/elasticsearch
+    regexp="^(DAEMON_OPTS=\".*-Des.max-open-files=true\")$"
+    insertafter="^(DAEMON_OPTS=\".*CONF_DIR\")$"
+    line="DAEMON_OPTS=\"$DAEMON_OPTS -Des.max-open-files=true\""
+
+# CONF_FILE FIX
+- lineinfile:
+    dest=/etc/sysconfig/elasticsearch
+    regexp="^CONF_FILE={{ elasticsearch_conf_dir }}/elasticsearch.yml"
+    insertafter=EOF
+    line="CONF_FILE={{ elasticsearch_conf_dir }}/elasticsearch.yml"
+
+- name: Configure Elasticsearch Systemd Script
+  template: src=elasticsearch.service.j2 dest=/etc/systemd/system/elasticsearch.service owner={{ elasticsearch_user }} group={{ elasticsearch_group }} mode=0644
+  when: elasticsearch_conf_dir is defined and ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '>=') }}
+
+- name: Enable Elasticsearch service
+  service:  name=elasticsearch enabled=yes
+  when: elasticsearch_conf_dir is defined and ansible_os_family == "RedHat"
+  become: true
+
+- name: Configure Elasticsearch Node
+  template: src=elasticsearch.yml.j2 dest={{ elasticsearch_conf_dir }}/elasticsearch.yml owner={{ elasticsearch_user }} group={{ elasticsearch_group }} mode=0644
+  when: elasticsearch_conf_dir is defined and ansible_os_family == "RedHat"
+
+- template: src=elasticsearch.default.j2 dest=/etc/default/elasticsearch owner={{ elasticsearch_user }} group={{ elasticsearch_group }} mode=0644
+  when: ansible_os_family == "Debian"
+
+# Fix permissions
+- file:
+    path="{{ elasticsearch_data_dir }}" state=directory
+    owner={{ elasticsearch_user }} group={{ elasticsearch_group }}
+    recurse=yes
+
+- name: Install couchbase-transport plugin
+  shell: "bin/plugin -install transport-couchbase -url {{ elasticsearch_transport_couchbase_download_url }}"
+  args:
+    chdir: "{{ elasticsearch_home_dir }}"
+    creates: "{{ elasticsearch_plugin_dir }}/transport-couchbase/couchbase_template.json"
+
+- name: Install lang-mvel plugin
+  shell: "bin/plugin -install {{ elasticsearch_mvel_plugin_package }} -url {{ elasticsearch_mvel_plugin_download_url }}"
+  args:
+    chdir: "{{ elasticsearch_home_dir }}"
+    creates: "{{ elasticsearch_plugin_dir }}/lang-mvel"
+
+# Fix permissions
+- file:
+    path="{{ elasticsearch_plugin_dir }}" state=directory
+    owner={{ elasticsearch_user }} group={{ elasticsearch_group }}
+    recurse=yes
+
+- name: Restarting Elasticsearch
+  service: name=elasticsearch state=restarted

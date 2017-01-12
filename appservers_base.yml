@@ -1,0 +1,7 @@
+
+- name: Install application servers
+  hosts: app
+  become: true
+  roles:
+    - { role: nodejs }
+    - { role: clamav, when: nxt_api_antivirus_enabled == 'true' }
